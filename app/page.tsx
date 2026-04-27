@@ -12,8 +12,8 @@ export default function HomePage() {
           relatórios quantitativos e qualitativos após no mínimo 5 dias de histórico.
         </p>
         <div className="landing-actions">
-          <Link href="/clients/client_aurora" className="primary-link">
-            Abrir dashboard exemplo
+          <Link href="/clients/fonil" className="primary-link">
+            Abrir dashboard
           </Link>
           <a href="/api/health" className="ghost-link">
             Healthcheck

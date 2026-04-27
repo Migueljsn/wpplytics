@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 
 type ClientPageProps = {
@@ -7,10 +8,35 @@ type ClientPageProps = {
 export default async function ClientPage({ params }: ClientPageProps) {
   const { clientId } = await params;
   const client = await getDashboardClient(clientId);
-  const conversations = await getInstanceConversations();
-  const previews = await getReportPreviews();
+
+  if (!client) notFound();
+
   const selectedInstance = client.instances[0];
+
+  if (!selectedInstance) {
+    return (
+      <main className="dashboard-shell">
+        <aside className="sidebar">
+          <div className="brand-block">
+            <p className="kicker">WPPlytics</p>
+            <h1>{client.name}</h1>
+          </div>
+          <section className="sidebar-card">
+            <h2>Sem instâncias</h2>
+            <p className="muted">Nenhuma instância WhatsApp configurada.</p>
+          </section>
+        </aside>
+      </main>
+    );
+  }
+
+  const [conversations, previews] = await Promise.all([
+    getInstanceConversations(selectedInstance.id),
+    getReportPreviews(selectedInstance.id),
+  ]);
+
   const canAnalyze = selectedInstance.reportAvailability.minimumDaysMet;
+  const activeConversation = conversations[0] ?? null;
 
   return (
     <main className="dashboard-shell">
@@ -40,6 +66,14 @@ export default async function ClientPage({ params }: ClientPageProps) {
             <div>
               <dt>Histórico acumulado</dt>
               <dd>{selectedInstance.reportAvailability.collectedDays} dias</dd>
+            </div>
+            <div>
+              <dt>Conversas</dt>
+              <dd>{selectedInstance.conversationCount}</dd>
+            </div>
+            <div>
+              <dt>Mensagens</dt>
+              <dd>{selectedInstance.messageCount}</dd>
             </div>
           </dl>
         </section>
@@ -73,16 +107,24 @@ export default async function ClientPage({ params }: ClientPageProps) {
               <li>{previews.quantitative.totalConversations} conversas</li>
               <li>{previews.quantitative.totalMessages} mensagens</li>
               <li>{previews.quantitative.responseRate}% taxa de resposta</li>
-              <li>{previews.quantitative.averageFirstResponseMinutes} min TMP</li>
+              <li>
+                {previews.quantitative.averageFirstResponseMinutes > 0
+                  ? `${previews.quantitative.averageFirstResponseMinutes} min TMP médio`
+                  : 'TMP: ainda calculando'}
+              </li>
             </ul>
           </div>
           <div className="preview-block">
             <h3>Qualitativo</h3>
-            <ul>
-              {previews.qualitative.patterns.map((pattern) => (
-                <li key={pattern}>{pattern}</li>
-              ))}
-            </ul>
+            {previews.qualitative.patterns.length > 0 ? (
+              <ul>
+                {previews.qualitative.patterns.map((pattern) => (
+                  <li key={pattern}>{pattern}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted">Disponível após geração do relatório.</p>
+            )}
           </div>
         </section>
       </aside>
@@ -98,77 +140,81 @@ export default async function ClientPage({ params }: ClientPageProps) {
           </div>
         </header>
 
-        <div className="conversation-layout">
-          <section className="conversation-list">
-            {conversations.map((conversation, index) => (
-              <article
-                key={conversation.id}
-                className={`conversation-row ${index === 0 ? 'conversation-row-active' : ''}`}
-              >
-                <div className="conversation-row-head">
-                  <strong>{conversation.contactName}</strong>
-                  <span>{formatHour(conversation.endedAt)}</span>
-                </div>
-                <p>{lastMessage(conversation.messages)}</p>
-                <div className="conversation-row-meta">
-                  <span>{conversation.messageCount} msgs</span>
-                  <span>
-                    TMP:{' '}
-                    {conversation.firstResponseTimeSecs
-                      ? `${Math.round(conversation.firstResponseTimeSecs / 60)} min`
-                      : 'n/d'}
-                  </span>
-                </div>
-              </article>
-            ))}
-          </section>
-
-          <section className="chat-panel">
-            <header className="chat-panel-header">
-              <div>
-                <h3>{conversations[0].contactName}</h3>
-                <p>{conversations[0].remoteJid}</p>
-              </div>
-              <div className="chat-chip">Somente leitura</div>
-            </header>
-
-            <div className="message-thread">
-              {conversations[0].messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`message-bubble ${message.fromMe ? 'message-bubble-out' : 'message-bubble-in'}`}
+        {conversations.length === 0 ? (
+          <div className="conversation-layout">
+            <p className="muted" style={{ padding: '2rem' }}>
+              Nenhuma conversa registrada ainda. Aguardando mensagens via WhatsApp.
+            </p>
+          </div>
+        ) : (
+          <div className="conversation-layout">
+            <section className="conversation-list">
+              {conversations.map((conversation, index) => (
+                <article
+                  key={conversation.id}
+                  className={`conversation-row ${index === 0 ? 'conversation-row-active' : ''}`}
                 >
-                  <p>{message.textContent}</p>
-                  <span>{formatHour(message.sentAt)}</span>
-                </div>
+                  <div className="conversation-row-head">
+                    <strong>{conversation.contactName}</strong>
+                    <span>{formatHour(conversation.endedAt)}</span>
+                  </div>
+                  <p>{lastMessage(conversation.messages)}</p>
+                  <div className="conversation-row-meta">
+                    <span>{conversation.messageCount} msgs</span>
+                    <span>
+                      TMP:{' '}
+                      {conversation.firstResponseTimeSecs
+                        ? `${Math.round(conversation.firstResponseTimeSecs / 60)} min`
+                        : 'n/d'}
+                    </span>
+                  </div>
+                </article>
               ))}
-            </div>
+            </section>
 
-            <footer className="chat-panel-footer">
-              <div className="disabled-input">
-                Campo de envio desabilitado. O produto não envia mensagens, apenas observa e analisa.
-              </div>
-            </footer>
-          </section>
-        </div>
+            {activeConversation && (
+              <section className="chat-panel">
+                <header className="chat-panel-header">
+                  <div>
+                    <h3>{activeConversation.contactName}</h3>
+                    <p>{activeConversation.remoteJid}</p>
+                  </div>
+                  <div className="chat-chip">Somente leitura</div>
+                </header>
+
+                <div className="message-thread">
+                  {activeConversation.messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`message-bubble ${message.fromMe ? 'message-bubble-out' : 'message-bubble-in'}`}
+                    >
+                      <p>{message.textContent || <em style={{ opacity: 0.5 }}>mídia</em>}</p>
+                      <span>{formatHour(message.sentAt)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <footer className="chat-panel-footer">
+                  <div className="disabled-input">
+                    Campo de envio desabilitado. O produto não envia mensagens, apenas observa e analisa.
+                  </div>
+                </footer>
+              </section>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'n/d';
-  }
-
+  if (!value) return 'n/d';
   return new Date(value).toLocaleString('pt-BR');
 }
 
 function formatDate(value: string | null) {
-  if (!value) {
-    return 'n/d';
-  }
-
+  if (!value) return 'n/d';
   return new Date(value).toLocaleDateString('pt-BR');
 }
 
@@ -177,5 +223,5 @@ function formatHour(value: string) {
 }
 
 function lastMessage(messages: Array<{ textContent: string }>) {
-  return messages[messages.length - 1]?.textContent ?? '';
+  return messages[messages.length - 1]?.textContent || '(mídia)';
 }

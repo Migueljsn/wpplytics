@@ -99,6 +99,12 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
             ? 'MIXED'
             : conv.direction;
 
+        // Calculate firstResponseTimeSecs: first outbound after at least one inbound
+        const firstResponseTimeSecs =
+          fromMe && conv.inboundCount > 0 && conv.firstResponseTimeSecs === null
+            ? Math.round((sentAt.getTime() - conv.startedAt.getTime()) / 1000)
+            : undefined;
+
         await prisma.conversation.update({
           where: { id: conv.id },
           data: {
@@ -107,6 +113,7 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
             ...(fromMe ? { outboundCount: { increment: 1 } } : { inboundCount: { increment: 1 } }),
             direction: newDirection,
             contactId: contact?.id ?? conv.contactId ?? undefined,
+            ...(firstResponseTimeSecs !== undefined ? { firstResponseTimeSecs, firstResponseAt: sentAt } : {}),
           },
         });
       } else {
