@@ -548,6 +548,230 @@ button { font: inherit; }
   font-size: 0.82rem;
 }
 
+/* ── Login ── */
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-panel {
+  width: min(420px, 100%);
+  background: rgba(255,255,255,0.88);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  padding: 40px 44px;
+}
+
+.login-title {
+  margin: 8px 0 4px;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+.login-sub {
+  margin: 0 0 28px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+
+.login-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.login-input {
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+  padding: 0 14px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.login-input:focus { border-color: var(--brand); }
+
+.login-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fff0f0;
+  border: 1px solid #fcc;
+  border-radius: 10px;
+  color: #c0392b;
+  font-size: 0.85rem;
+}
+
+.login-submit { width: 100%; margin-top: 4px; }
+
+/* ── Admin ── */
+.admin-shell {
+  width: min(1200px, calc(100vw - 32px));
+  margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 28px 32px;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.admin-title {
+  margin: 6px 0 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+}
+
+.admin-signout { min-height: 38px; font-size: 0.85rem; }
+
+.admin-alert {
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.admin-alert-error { background: #fff0f0; border: 1px solid #fcc; color: #c0392b; }
+.admin-alert-ok { background: var(--brand-soft); border: 1px solid rgba(15,157,117,0.2); color: var(--brand); }
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-card {
+  background: rgba(255,255,255,0.82);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px 32px;
+}
+
+.admin-forms { display: flex; flex-direction: column; gap: 20px; }
+
+.admin-card-title {
+  margin: 0 0 20px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.admin-client-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-client-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.admin-client-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-instance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.admin-instance-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-instance-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.admin-instance-dot[data-status="CONNECTED"] { background: var(--brand); }
+.admin-instance-dot[data-status="DISCONNECTED"] { background: #c0392b; }
+.admin-instance-dot[data-status="ERROR"] { background: #e67e22; }
+
+.admin-form { display: flex; flex-direction: column; gap: 14px; }
+
+.admin-field { display: flex; flex-direction: column; gap: 5px; }
+
+.admin-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.admin-input {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.admin-input:focus { border-color: var(--brand); }
+
+select.admin-input { cursor: pointer; }
+
+.admin-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.admin-nav-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 0;
+  text-decoration: underline;
+}
+
+.admin-nav-link:hover { color: var(--text); }
+
 /* ── Confirmation modal ── */
 .cv-modal-overlay {
   position: absolute;

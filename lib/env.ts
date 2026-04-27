@@ -11,6 +11,7 @@ const envSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  AUTH_SECRET: z.string().min(1, 'AUTH_SECRET is required'),
 });
 
 export const env = envSchema.parse(process.env);

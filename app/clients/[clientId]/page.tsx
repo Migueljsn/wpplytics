@@ -4,6 +4,7 @@ import { getDashboardClient, getInstanceConversations, getReportPreviews } from 
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
 import { GenerateQualitativeButton } from './generate-qualitative-button';
+import { signOut } from '@/auth';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
@@ -70,7 +71,15 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
     <main className="dashboard-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <p className="kicker">WPPlytics</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
+            <form action={async () => {
+              'use server';
+              await signOut({ redirectTo: '/login' });
+            }}>
+              <button type="submit" className="admin-nav-link">Sair</button>
+            </form>
+          </div>
           <h1>{client.name}</h1>
           <p>{client.sector}</p>
         </div>

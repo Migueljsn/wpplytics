@@ -33,6 +33,20 @@ enum AnalysisType {
   QUALITATIVE
 }
 
+enum UserRole {
+  ADMIN
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  hashedPassword String
+  name           String?
+  role           UserRole @default(ADMIN)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model Client {
   id          String        @id @default(cuid())
   name        String
