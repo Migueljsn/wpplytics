@@ -4,6 +4,8 @@ import { authConfig } from '@/auth.config';
 export default NextAuth(authConfig).auth;
 
 export const config = {
-  // Exclude static files and the Evolution API webhook (must remain public)
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|api/evolution).*)'],
+  // Protect only pages — exclude all API routes and static files.
+  // API routes handle their own auth internally.
+  // The Evolution API webhook (/api/evolution) must remain public.
+  matcher: ['/((?!api|_next/static|_next/image|favicon\\.ico).*)'],
 };

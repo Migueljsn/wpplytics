@@ -9,15 +9,21 @@ export async function loginAction(
 ): Promise<string | null> {
   try {
     await signIn('credentials', {
-      email: formData.get('email'),
-      password: formData.get('password'),
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
       redirectTo: '/admin',
     });
   } catch (err) {
+    // NextAuth throws NEXT_REDIRECT on success — must re-throw so Next.js handles it
+    if ((err as { digest?: string }).digest?.startsWith('NEXT_REDIRECT')) {
+      throw err;
+    }
     if (err instanceof AuthError) {
       return 'E-mail ou senha incorretos.';
     }
-    throw err; // rethrow redirect
+    // Unexpected errors (e.g. missing AUTH_SECRET, DB down)
+    console.error('[login] unexpected error:', err);
+    return 'Erro interno. Verifique as configurações do servidor.';
   }
   return null;
 }
