@@ -548,6 +548,57 @@ button { font: inherit; }
   font-size: 0.82rem;
 }
 
+/* ── Confirmation modal ── */
+.cv-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 42, 56, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: inherit;
+}
+
+.cv-modal {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(27, 42, 56, 0.18);
+  padding: 28px 32px;
+  width: min(360px, calc(100% - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-modal-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cv-modal-body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.cv-modal-body strong { color: var(--text); }
+
+.cv-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.cv-modal-danger {
+  background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+}
+
 /* ── Date Filter ── */
 .date-filter {
   display: flex;

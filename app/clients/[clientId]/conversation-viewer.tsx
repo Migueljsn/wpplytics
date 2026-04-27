@@ -77,6 +77,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [secondsAgo, setSecondsAgo] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
@@ -119,17 +120,19 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     return () => clearInterval(tick);
   }, [lastUpdated]);
 
-  async function handleDelete(convId: string) {
-    setDeletingId(convId);
+  async function confirmDelete() {
+    if (!confirmId) return;
+    setDeletingId(confirmId);
+    setConfirmId(null);
     try {
-      await fetch(`/api/conversations/${convId}`, { method: 'DELETE' });
+      await fetch(`/api/conversations/${confirmId}`, { method: 'DELETE' });
       setVisibleIds((prev) => {
         const next = new Set(prev);
-        next.delete(convId);
+        next.delete(confirmId);
         return next;
       });
-      if (selectedId === convId) {
-        const next = visible.find((c) => c.id !== convId);
+      if (selectedId === confirmId) {
+        const next = visible.find((c) => c.id !== confirmId);
         setSelectedId(next?.id ?? null);
       }
     } finally {
@@ -197,7 +200,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                   className="cv-delete-btn"
                   title="Ocultar conversa"
                   disabled={isDeleting}
-                  onClick={(e) => { e.stopPropagation(); void handleDelete(conv.id); }}
+                  onClick={(e) => { e.stopPropagation(); setConfirmId(conv.id); }}
                 >
                   {isDeleting ? '…' : '×'}
                 </button>
@@ -239,6 +242,30 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
       ) : (
         <div className="cv-no-sel">Selecione uma conversa</div>
       )}
+
+      {confirmId && (() => {
+        const conv = visible.find((c) => c.id === confirmId);
+        return (
+          <div className="cv-modal-overlay" onClick={() => setConfirmId(null)}>
+            <div className="cv-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="cv-modal-title">Ocultar conversa</h3>
+              <p className="cv-modal-body">
+                Deseja ocultar a conversa com <strong>{conv?.contactName ?? 'este contato'}</strong>?
+                <br />
+                Ela sumirá da sua visualização, mas nada será alterado no WhatsApp.
+              </p>
+              <div className="cv-modal-actions">
+                <button className="action-button secondary" onClick={() => setConfirmId(null)}>
+                  Cancelar
+                </button>
+                <button className="action-button cv-modal-danger" onClick={() => void confirmDelete()}>
+                  Ocultar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
