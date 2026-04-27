@@ -1165,82 +1165,98 @@ select.admin-input { cursor: pointer; }
 
 /* ── Dark mode ── */
 html.dark {
-  --bg: #0d1117;
-  --panel: #161b22;
-  --panel-muted: #0d1117;
-  --line: #21262d;
-  --text: #e6edf3;
-  --muted: #8b949e;
-  --brand: #0f9d75;
-  --brand-dark: #12c490;
-  --brand-soft: #0d2a20;
+  --bg: #0b0f14;
+  --panel: #131920;
+  --panel-muted: #1a2232;   /* mais claro que panel — cards se destacam corretamente */
+  --line: #2a3545;
+  --text: #f0f6fc;
+  --muted: #9aafc4;
+  --brand: #11b585;
+  --brand-dark: #0f9d75;
+  --brand-soft: #0d2d22;
   --blue: #79b8ff;
   --red: #ff7b72;
   --warn: #e3b341;
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
-  --shadow: 0 8px 32px rgba(0,0,0,0.45);
-  --shadow-lg: 0 24px 64px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,0.6);
 }
 
 html.dark body {
   background:
-    radial-gradient(ellipse at top left, rgba(15,157,117,0.07), transparent 40%),
-    radial-gradient(ellipse at top right, rgba(76,140,243,0.05), transparent 40%),
-    radial-gradient(ellipse at bottom, rgba(15,157,117,0.03), transparent 60%),
+    radial-gradient(ellipse at top left, rgba(17,181,133,0.08), transparent 40%),
+    radial-gradient(ellipse at top right, rgba(76,140,243,0.06), transparent 40%),
+    radial-gradient(ellipse at bottom, rgba(17,181,133,0.04), transparent 60%),
     var(--bg);
 }
 
-/* Panels com rgba hardcoded */
+/* Painéis principais */
 html.dark .sidebar,
-html.dark .content-panel { background: rgba(22,27,34,0.92); }
+html.dark .content-panel { background: rgba(19,25,32,0.97); }
 
-html.dark .landing-panel { background: rgba(22,27,34,0.92); }
-
-html.dark .login-panel { background: rgba(22,27,34,0.95); }
-
+html.dark .landing-panel { background: rgba(19,25,32,0.97); }
+html.dark .login-panel { background: rgba(19,25,32,0.98); }
 html.dark .admin-header,
-html.dark .admin-card { background: rgba(22,27,34,0.92); }
+html.dark .admin-card { background: rgba(19,25,32,0.97); }
 
 /* Botão secondary */
 html.dark .action-button.secondary,
-html.dark .ghost-link { background: rgba(255,255,255,0.06); }
+html.dark .ghost-link { background: rgba(255,255,255,0.08); color: var(--text); }
 html.dark .action-button.secondary:hover,
-html.dark .ghost-link:hover { background: rgba(255,255,255,0.1); }
+html.dark .ghost-link:hover { background: rgba(255,255,255,0.14); }
 
 /* Date filter */
-html.dark .date-filter-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-html.dark .date-filter-btn-active { background: var(--panel) !important; box-shadow: var(--shadow-sm); }
+html.dark .date-filter-container { background: rgba(255,255,255,0.05); }
+html.dark .date-filter-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+html.dark .date-filter-btn-active { background: var(--panel-muted) !important; color: var(--text) !important; box-shadow: var(--shadow-sm); }
 
-/* Chat thread */
+/* Conversation list */
+html.dark .cv-list { background: var(--panel); }
+html.dark .cv-list-header { background: var(--panel); border-bottom-color: var(--line); }
+html.dark .cv-row-wrap:hover { background: rgba(17,181,133,0.07); }
+html.dark .cv-row-wrap-active { background: var(--brand-soft) !important; }
+html.dark .cv-row-name { color: var(--text); }
+html.dark .cv-row-preview { color: var(--muted); }
+html.dark .cv-delete-btn { color: var(--muted); }
+html.dark .cv-delete-btn:hover { background: rgba(255,119,114,0.15); color: var(--red); border-color: rgba(255,119,114,0.3); }
+
+/* Chat área */
+html.dark .cv-chat { background: var(--panel); }
+html.dark .cv-chat-header { background: var(--panel); border-bottom-color: var(--line); }
 html.dark .cv-thread {
   background:
-    linear-gradient(180deg, rgba(13,17,23,0.5), rgba(13,17,23,0.2)),
+    linear-gradient(180deg, rgba(11,15,20,0.4), rgba(11,15,20,0.1)),
     repeating-linear-gradient(
       45deg,
-      rgba(15,157,117,0.015), rgba(15,157,117,0.015) 18px,
-      rgba(76,140,243,0.01) 18px, rgba(76,140,243,0.01) 36px
+      rgba(17,181,133,0.02), rgba(17,181,133,0.02) 18px,
+      rgba(76,140,243,0.015) 18px, rgba(76,140,243,0.015) 36px
     );
 }
-html.dark .cv-date-sep span { background: rgba(22,27,34,0.95); }
-html.dark .cv-bubble-in { background: var(--panel); border-color: var(--line); }
+html.dark .cv-date-sep span { background: rgba(19,25,32,0.98); color: var(--muted); }
+html.dark .cv-bubble-in { background: var(--panel-muted); border-color: var(--line); }
+html.dark .cv-bubble-out { background: var(--brand-soft); border-color: rgba(17,181,133,0.3); }
 html.dark .cv-bubble { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-html.dark .cv-bubble-out { background: var(--brand-soft); border-color: rgba(15,157,117,0.25); }
 
 /* Modal */
-html.dark .cv-modal { background: var(--panel); }
-html.dark .cv-modal-overlay { background: rgba(0,0,0,0.55); }
+html.dark .cv-modal { background: var(--panel-muted); }
+html.dark .cv-modal-overlay { background: rgba(0,0,0,0.65); }
 
-/* KPI warn card */
+/* KPI cards */
 html.dark .kpi-card-warn { background: #1e1500; border-color: #3d2e00; }
+html.dark .kpi-card-brand { background: var(--brand-soft); border-color: rgba(17,181,133,0.25); }
 
 /* Login */
-html.dark .login-input:focus { background: var(--panel); }
+html.dark .login-input { background: var(--panel-muted); border-color: var(--line); color: var(--text); }
+html.dark .login-input:focus { background: var(--panel-muted); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(17,181,133,0.15); }
+html.dark .login-input::placeholder { color: rgba(154,175,196,0.45); }
 html.dark .login-error { background: rgba(255,119,114,0.1); border-color: rgba(255,119,114,0.25); }
 
 /* Admin */
+html.dark .admin-input { background: var(--panel-muted); border-color: var(--line); color: var(--text); }
+html.dark .admin-input:focus { background: var(--panel-muted); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(17,181,133,0.15); }
+html.dark .admin-client-row { background: var(--panel-muted); }
 html.dark .admin-alert-error { background: rgba(255,119,114,0.1); border: 1px solid rgba(255,119,114,0.25); }
-html.dark .admin-danger-card { border-color: rgba(255,119,114,0.35) !important; background: rgba(255,119,114,0.06) !important; }
-html.dark .admin-input:focus { background: var(--panel); }
+html.dark .admin-danger-card { border-color: rgba(255,119,114,0.4) !important; background: rgba(255,119,114,0.07) !important; }
 
 /* ── Print ── */
 @media print {
