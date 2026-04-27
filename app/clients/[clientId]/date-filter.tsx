@@ -17,7 +17,8 @@ export function DateFilter({ current }: { current: string }) {
   function setPeriod(period: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('period', period);
-    router.push(`${pathname}?${params.toString()}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    router.push(`${pathname}?${params.toString()}` as any);
   }
 
   return (
