@@ -1,15 +1,39 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
+import { DateFilter } from './date-filter';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
+  searchParams: Promise<{ period?: string }>;
 };
 
-export default async function ClientPage({ params }: ClientPageProps) {
-  const { clientId } = await params;
-  const client = await getDashboardClient(clientId);
+function parsePeriod(period?: string): { from: Date | null; to: Date } {
+  const to = new Date();
+  if (period === '7d') {
+    const from = new Date(to);
+    from.setDate(from.getDate() - 7);
+    return { from, to };
+  }
+  if (period === '90d') {
+    const from = new Date(to);
+    from.setDate(from.getDate() - 90);
+    return { from, to };
+  }
+  if (period === 'all') return { from: null, to };
+  // Default: 30d
+  const from = new Date(to);
+  from.setDate(from.getDate() - 30);
+  return { from, to };
+}
 
+export default async function ClientPage({ params, searchParams }: ClientPageProps) {
+  const { clientId } = await params;
+  const { period } = await searchParams;
+  const { from, to } = parsePeriod(period);
+
+  const client = await getDashboardClient(clientId);
   if (!client) notFound();
 
   const selectedInstance = client.instances[0];
@@ -32,11 +56,13 @@ export default async function ClientPage({ params }: ClientPageProps) {
   }
 
   const [conversations, previews] = await Promise.all([
-    getInstanceConversations(selectedInstance.id),
-    getReportPreviews(selectedInstance.id),
+    getInstanceConversations(selectedInstance.id, from, to),
+    getReportPreviews(selectedInstance.id, from, to),
   ]);
 
   const canAnalyze = selectedInstance.reportAvailability.minimumDaysMet;
+  const activePeriod = period ?? '30d';
+  const reportHref = `/clients/${client.slug}/report?period=${activePeriod}`;
 
   return (
     <main className="dashboard-shell">
@@ -84,9 +110,15 @@ export default async function ClientPage({ params }: ClientPageProps) {
             Liberado com no mínimo 5 dias de histórico coletado a partir da primeira mensagem.
           </p>
           <div className="action-stack">
-            <button disabled={!canAnalyze} className="action-button">
-              Gerar Quantitativo
-            </button>
+            {canAnalyze ? (
+              <a href={reportHref} className="action-button" style={{ textDecoration: 'none' }}>
+                Gerar Quantitativo
+              </a>
+            ) : (
+              <button disabled className="action-button">
+                Gerar Quantitativo
+              </button>
+            )}
             <button disabled={!canAnalyze} className="action-button secondary">
               Gerar Qualitativo
             </button>
@@ -99,7 +131,7 @@ export default async function ClientPage({ params }: ClientPageProps) {
         </section>
 
         <section className="sidebar-card">
-          <h2>Prévia</h2>
+          <h2>Prévia do período</h2>
           <div className="preview-block">
             <h3>Quantitativo</h3>
             <ul>
@@ -128,9 +160,9 @@ export default async function ClientPage({ params }: ClientPageProps) {
             <p className="kicker">Histórico interno</p>
             <h2>Conversas e chat</h2>
           </div>
-          <div className="header-note">
-            Somente leitura — sem envio de mensagens.
-          </div>
+          <Suspense fallback={<div className="date-filter-skeleton" />}>
+            <DateFilter current={activePeriod} />
+          </Suspense>
         </header>
 
         <ConversationViewer conversations={conversations} />

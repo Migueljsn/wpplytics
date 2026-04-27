@@ -59,3 +59,15 @@ export type QualitativePreview = {
   opportunities: string[];
   objections: string[];
 };
+
+export type QuantitativeReport = {
+  period: { from: string | null; to: string };
+  totalConversations: number;
+  totalMessages: number;
+  responseRate: number;
+  noResponseCount: number;
+  averageFirstResponseMinutes: number | null;
+  averageMessagesPerConversation: number;
+  byHour: { hour: number; count: number }[];
+  byDayOfWeek: { day: number; label: string; count: number }[];
+};

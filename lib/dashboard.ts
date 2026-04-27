@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getReportAvailability } from '@/lib/report-availability';
-import type { DashboardClient, ChatConversation, QuantitativePreview, QualitativePreview } from '@/lib/types';
+import type { DashboardClient, ChatConversation, QuantitativePreview, QualitativePreview, QuantitativeReport } from '@/lib/types';
 
 export async function getDashboardClient(clientId: string): Promise<DashboardClient | null> {
   const client = await prisma.client.findFirst({
@@ -44,9 +44,14 @@ function normalizeMessageType(type: string): 'text' | 'audio' | 'image' | 'docum
   return 'unknown';
 }
 
-export async function getInstanceConversations(instanceId: string): Promise<ChatConversation[]> {
+export async function getInstanceConversations(
+  instanceId: string,
+  from: Date | null,
+  to: Date,
+): Promise<ChatConversation[]> {
+  const dateFilter = from ? { gte: from, lte: to } : undefined;
   const conversations = await prisma.conversation.findMany({
-    where: { instanceId },
+    where: { instanceId, ...(dateFilter ? { startedAt: dateFilter } : {}) },
     orderBy: { endedAt: 'desc' },
     take: 50,
     include: { contact: true },
@@ -82,13 +87,15 @@ export async function getInstanceConversations(instanceId: string): Promise<Chat
   );
 }
 
-export async function getReportPreviews(instanceId: string): Promise<{
-  quantitative: QuantitativePreview;
-  qualitative: QualitativePreview;
-}> {
+export async function getReportPreviews(
+  instanceId: string,
+  from: Date | null,
+  to: Date,
+): Promise<{ quantitative: QuantitativePreview; qualitative: QualitativePreview }> {
+  const dateFilter = from ? { gte: from, lte: to } : undefined;
   const [conversations, messageCount] = await Promise.all([
-    prisma.conversation.findMany({ where: { instanceId } }),
-    prisma.message.count({ where: { instanceId } }),
+    prisma.conversation.findMany({ where: { instanceId, ...(dateFilter ? { startedAt: dateFilter } : {}) } }),
+    prisma.message.count({ where: { instanceId, ...(dateFilter ? { sentAt: dateFilter } : {}) } }),
   ]);
 
   const total = conversations.length;
@@ -118,5 +125,61 @@ export async function getReportPreviews(instanceId: string): Promise<{
       opportunities: [],
       objections: [],
     },
+  };
+}
+
+export async function getQuantitativeReport(
+  instanceId: string,
+  from: Date | null,
+  to: Date,
+): Promise<QuantitativeReport> {
+  const dateFilter = from ? { gte: from, lte: to } : undefined;
+
+  const [conversations, inboundMessages] = await Promise.all([
+    prisma.conversation.findMany({
+      where: { instanceId, ...(dateFilter ? { startedAt: dateFilter } : {}) },
+    }),
+    prisma.message.findMany({
+      where: { instanceId, fromMe: false, ...(dateFilter ? { sentAt: dateFilter } : {}) },
+      select: { sentAt: true },
+    }),
+  ]);
+
+  const total = conversations.length;
+  const responded = conversations.filter((c) => c.outboundCount > 0).length;
+  const noResponseCount = total - responded;
+  const responseRate = total > 0 ? Math.round((responded / total) * 1000) / 10 : 0;
+
+  const withTmp = conversations.filter((c) => c.firstResponseTimeSecs != null);
+  const averageFirstResponseMinutes =
+    withTmp.length > 0
+      ? Math.round(
+          (withTmp.reduce((a, c) => a + (c.firstResponseTimeSecs ?? 0), 0) / withTmp.length / 60) * 10,
+        ) / 10
+      : null;
+
+  const totalMessages = inboundMessages.length;
+  const averageMessagesPerConversation = total > 0 ? Math.round((totalMessages / total) * 10) / 10 : 0;
+
+  const hourCounts = new Array(24).fill(0) as number[];
+  const dayCounts = new Array(7).fill(0) as number[];
+  for (const msg of inboundMessages) {
+    const d = new Date(msg.sentAt);
+    hourCounts[d.getHours()]++;
+    dayCounts[d.getDay()]++;
+  }
+
+  const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  return {
+    period: { from: from?.toISOString() ?? null, to: to.toISOString() },
+    totalConversations: total,
+    totalMessages,
+    responseRate,
+    noResponseCount,
+    averageFirstResponseMinutes,
+    averageMessagesPerConversation,
+    byHour: hourCounts.map((count, hour) => ({ hour, count })),
+    byDayOfWeek: dayCounts.map((count, day) => ({ day, label: dayLabels[day], count })),
   };
 }
