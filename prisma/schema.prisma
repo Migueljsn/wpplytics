@@ -110,6 +110,7 @@ model Conversation {
   firstResponseTimeSecs Int?
   direction             ConversationDirection @default(MIXED)
   summary               String?
+  hidden                Boolean               @default(false)
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   instance              WaInstance            @relation(fields: [instanceId], references: [id], onDelete: Cascade)

@@ -61,7 +61,8 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
     getReportPreviews(selectedInstance.id, from, to),
   ]);
 
-  const canAnalyze = selectedInstance.reportAvailability.minimumDaysMet;
+  const canQuantitative = selectedInstance.conversationCount > 0;
+  const canQualitative = selectedInstance.reportAvailability.minimumDaysMet;
   const activePeriod = period ?? '30d';
   const reportHref = `/clients/${client.slug}/report?period=${activePeriod}`;
 
@@ -111,7 +112,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
             Liberado com no mínimo 5 dias de histórico coletado a partir da primeira mensagem.
           </p>
           <div className="action-stack">
-            {canAnalyze ? (
+            {canQuantitative ? (
               <a href={reportHref} className="action-button" style={{ textDecoration: 'none' }}>
                 Gerar Quantitativo
               </a>
@@ -126,13 +127,13 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
               instanceId={selectedInstance.id}
               from={from?.toISOString() ?? null}
               to={to.toISOString()}
-              disabled={!canAnalyze}
+              disabled={!canQualitative}
             />
           </div>
-          <p className={canAnalyze ? 'status-positive' : 'status-warning'}>
-            {canAnalyze
+          <p className={canQualitative ? 'status-positive' : 'status-warning'}>
+            {canQualitative
               ? 'Histórico mínimo atingido.'
-              : `Bloqueado até ${formatDate(selectedInstance.reportAvailability.earliestAnalyzableAt)}.`}
+              : `Qualitativo disponível após ${formatDate(selectedInstance.reportAvailability.earliestAnalyzableAt)}.`}
           </p>
         </section>
 

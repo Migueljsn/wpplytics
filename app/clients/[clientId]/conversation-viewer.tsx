@@ -73,14 +73,20 @@ function renderMessages(messages: ChatMessage[]) {
 export function ConversationViewer({ conversations }: { conversations: ChatConversation[] }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(conversations[0]?.id ?? null);
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set(conversations.map((c) => c.id)));
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [secondsAgo, setSecondsAgo] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
-  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+  const visible = conversations.filter((c) => visibleIds.has(c.id));
+  const selected = visible.find((c) => c.id === selectedId) ?? null;
 
-  // Auto-scroll only when user is near the bottom
+  useEffect(() => {
+    setVisibleIds(new Set(conversations.map((c) => c.id)));
+  }, [conversations]);
+
   useEffect(() => {
     const el = threadRef.current;
     if (!el) return;
@@ -97,7 +103,6 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     }
   }, [selectedId, conversations]);
 
-  // Polling: refresh server data every 15s
   useEffect(() => {
     const poll = setInterval(() => {
       router.refresh();
@@ -107,7 +112,6 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     return () => clearInterval(poll);
   }, [router]);
 
-  // Tick the "X segundos atrás" counter
   useEffect(() => {
     const tick = setInterval(() => {
       setSecondsAgo(Math.round((Date.now() - lastUpdated.getTime()) / 1000));
@@ -115,10 +119,36 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     return () => clearInterval(tick);
   }, [lastUpdated]);
 
+  async function handleDelete(convId: string) {
+    setDeletingId(convId);
+    try {
+      await fetch(`/api/conversations/${convId}`, { method: 'DELETE' });
+      setVisibleIds((prev) => {
+        const next = new Set(prev);
+        next.delete(convId);
+        return next;
+      });
+      if (selectedId === convId) {
+        const next = visible.find((c) => c.id !== convId);
+        setSelectedId(next?.id ?? null);
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (conversations.length === 0) {
     return (
       <div className="cv-empty">
         <p>Nenhuma conversa registrada ainda.<br />Aguardando mensagens via WhatsApp.</p>
+      </div>
+    );
+  }
+
+  if (visible.length === 0) {
+    return (
+      <div className="cv-empty">
+        <p>Todas as conversas foram ocultadas.</p>
       </div>
     );
   }
@@ -129,39 +159,49 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
         <div className="cv-list-header">
           <span>Conversas</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="cv-badge">{conversations.length}</span>
+            <span className="cv-badge">{visible.length}</span>
             <span className="cv-sync-label">
               {secondsAgo < 5 ? 'agora' : `${secondsAgo}s atrás`}
             </span>
           </div>
         </div>
         <div className="cv-list-scroll">
-          {conversations.map((conv) => {
+          {visible.map((conv) => {
             const lastMsg = conv.messages[conv.messages.length - 1];
+            const isDeleting = deletingId === conv.id;
             return (
-              <button
-                key={conv.id}
-                className={`cv-row${conv.id === selectedId ? ' cv-row-active' : ''}`}
-                onClick={() => setSelectedId(conv.id)}
-              >
-                <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
-                <div className="cv-row-body">
-                  <div className="cv-row-head">
-                    <span className="cv-row-name">{conv.contactName}</span>
-                    <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+              <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                <button
+                  className={`cv-row${conv.id === selectedId ? ' cv-row-active' : ''}`}
+                  onClick={() => setSelectedId(conv.id)}
+                >
+                  <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                  <div className="cv-row-body">
+                    <div className="cv-row-head">
+                      <span className="cv-row-name">{conv.contactName}</span>
+                      <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+                    </div>
+                    <p className="cv-row-preview">
+                      {lastMsg?.fromMe && <span className="cv-me">Você: </span>}
+                      {lastMsg?.textContent || '📎 mídia'}
+                    </p>
+                    <div className="cv-row-meta">
+                      <span>{conv.messageCount} msgs</span>
+                      {conv.firstResponseTimeSecs != null && (
+                        <span>TMP {Math.round(conv.firstResponseTimeSecs / 60)}min</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="cv-row-preview">
-                    {lastMsg?.fromMe && <span className="cv-me">Você: </span>}
-                    {lastMsg?.textContent || '📎 mídia'}
-                  </p>
-                  <div className="cv-row-meta">
-                    <span>{conv.messageCount} msgs</span>
-                    {conv.firstResponseTimeSecs != null && (
-                      <span>TMP {Math.round(conv.firstResponseTimeSecs / 60)}min</span>
-                    )}
-                  </div>
-                </div>
-              </button>
+                </button>
+                <button
+                  className="cv-delete-btn"
+                  title="Ocultar conversa"
+                  disabled={isDeleting}
+                  onClick={(e) => { e.stopPropagation(); void handleDelete(conv.id); }}
+                >
+                  {isDeleting ? '…' : '×'}
+                </button>
+              </div>
             );
           })}
         </div>

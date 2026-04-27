@@ -51,7 +51,7 @@ export async function getInstanceConversations(
 ): Promise<ChatConversation[]> {
   const dateFilter = from ? { gte: from, lte: to } : undefined;
   const conversations = await prisma.conversation.findMany({
-    where: { instanceId, ...(dateFilter ? { startedAt: dateFilter } : {}) },
+    where: { instanceId, hidden: false, ...(dateFilter ? { startedAt: dateFilter } : {}) },
     orderBy: { endedAt: 'desc' },
     take: 50,
     include: { contact: true },
