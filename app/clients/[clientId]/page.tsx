@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp, ChevronRight } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
@@ -75,6 +76,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <ThemeToggle />
               <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <ShieldCheck size={13} /> Admin
               </a>

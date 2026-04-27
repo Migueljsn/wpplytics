@@ -1,6 +1,7 @@
 import { signOut } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Users, Plus, Pencil, Trash2, Wifi, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 import { createClient, updateClient, deleteClient, createInstance } from './actions';
 
 type SearchParams = Promise<{ error?: string; ok?: string; edit?: string; delete?: string }>;
@@ -33,6 +34,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             <LogOut size={14} /> Sair
           </button>
         </form>
+        <ThemeToggle />
       </header>
 
       {error && <div className="admin-alert admin-alert-error">{decodeURIComponent(error)}</div>}

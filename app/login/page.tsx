@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 import { loginAction } from './actions';
 
 export default function LoginPage() {
@@ -9,6 +10,9 @@ export default function LoginPage() {
 
   return (
     <main className="login-shell">
+      <div style={{ position: 'fixed', top: 20, right: 20 }}>
+        <ThemeToggle />
+      </div>
       <div className="login-panel">
         <div className="login-logo">
           <span className="login-logo-icon">W</span>
