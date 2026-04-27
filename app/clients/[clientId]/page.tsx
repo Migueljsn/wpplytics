@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
+import { ConversationViewer } from './conversation-viewer';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
@@ -36,7 +37,6 @@ export default async function ClientPage({ params }: ClientPageProps) {
   ]);
 
   const canAnalyze = selectedInstance.reportAvailability.minimumDaysMet;
-  const activeConversation = conversations[0] ?? null;
 
   return (
     <main className="dashboard-shell">
@@ -64,7 +64,7 @@ export default async function ClientPage({ params }: ClientPageProps) {
               <dd>{formatDateTime(selectedInstance.firstMessageAt)}</dd>
             </div>
             <div>
-              <dt>Histórico acumulado</dt>
+              <dt>Dias acumulados</dt>
               <dd>{selectedInstance.reportAvailability.collectedDays} dias</dd>
             </div>
             <div>
@@ -81,26 +81,25 @@ export default async function ClientPage({ params }: ClientPageProps) {
         <section className="sidebar-card">
           <h2>Relatórios</h2>
           <p className="muted">
-            A análise é liberada quando a instância possui no mínimo 5 dias de histórico
-            coletado a partir da primeira mensagem salva.
+            Liberado com no mínimo 5 dias de histórico coletado a partir da primeira mensagem.
           </p>
           <div className="action-stack">
             <button disabled={!canAnalyze} className="action-button">
-              Gerar relatório Quantitativo
+              Gerar Quantitativo
             </button>
             <button disabled={!canAnalyze} className="action-button secondary">
-              Gerar relatório Qualitativo
+              Gerar Qualitativo
             </button>
           </div>
           <p className={canAnalyze ? 'status-positive' : 'status-warning'}>
             {canAnalyze
-              ? 'Histórico mínimo atendido. Os botões podem acionar a geração de análise.'
-              : `Análise bloqueada até ${formatDate(selectedInstance.reportAvailability.earliestAnalyzableAt)}.`}
+              ? 'Histórico mínimo atingido.'
+              : `Bloqueado até ${formatDate(selectedInstance.reportAvailability.earliestAnalyzableAt)}.`}
           </p>
         </section>
 
         <section className="sidebar-card">
-          <h2>Prévia dos relatórios</h2>
+          <h2>Prévia</h2>
           <div className="preview-block">
             <h3>Quantitativo</h3>
             <ul>
@@ -110,21 +109,15 @@ export default async function ClientPage({ params }: ClientPageProps) {
               <li>
                 {previews.quantitative.averageFirstResponseMinutes > 0
                   ? `${previews.quantitative.averageFirstResponseMinutes} min TMP médio`
-                  : 'TMP: ainda calculando'}
+                  : 'TMP ainda calculando'}
               </li>
             </ul>
           </div>
           <div className="preview-block">
             <h3>Qualitativo</h3>
-            {previews.qualitative.patterns.length > 0 ? (
-              <ul>
-                {previews.qualitative.patterns.map((pattern) => (
-                  <li key={pattern}>{pattern}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="muted">Disponível após geração do relatório.</p>
-            )}
+            <p className="muted" style={{ margin: 0 }}>
+              Disponível após geração do relatório.
+            </p>
           </div>
         </section>
       </aside>
@@ -133,76 +126,14 @@ export default async function ClientPage({ params }: ClientPageProps) {
         <header className="content-header">
           <div>
             <p className="kicker">Histórico interno</p>
-            <h2>Lista de conversas e visualização em chat</h2>
+            <h2>Conversas e chat</h2>
           </div>
           <div className="header-note">
-            Sem envio de mensagens. Esta UI é apenas para inspeção, leitura e acionamento das análises.
+            Somente leitura — sem envio de mensagens.
           </div>
         </header>
 
-        {conversations.length === 0 ? (
-          <div className="conversation-layout">
-            <p className="muted" style={{ padding: '2rem' }}>
-              Nenhuma conversa registrada ainda. Aguardando mensagens via WhatsApp.
-            </p>
-          </div>
-        ) : (
-          <div className="conversation-layout">
-            <section className="conversation-list">
-              {conversations.map((conversation, index) => (
-                <article
-                  key={conversation.id}
-                  className={`conversation-row ${index === 0 ? 'conversation-row-active' : ''}`}
-                >
-                  <div className="conversation-row-head">
-                    <strong>{conversation.contactName}</strong>
-                    <span>{formatHour(conversation.endedAt)}</span>
-                  </div>
-                  <p>{lastMessage(conversation.messages)}</p>
-                  <div className="conversation-row-meta">
-                    <span>{conversation.messageCount} msgs</span>
-                    <span>
-                      TMP:{' '}
-                      {conversation.firstResponseTimeSecs
-                        ? `${Math.round(conversation.firstResponseTimeSecs / 60)} min`
-                        : 'n/d'}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </section>
-
-            {activeConversation && (
-              <section className="chat-panel">
-                <header className="chat-panel-header">
-                  <div>
-                    <h3>{activeConversation.contactName}</h3>
-                    <p>{activeConversation.remoteJid}</p>
-                  </div>
-                  <div className="chat-chip">Somente leitura</div>
-                </header>
-
-                <div className="message-thread">
-                  {activeConversation.messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`message-bubble ${message.fromMe ? 'message-bubble-out' : 'message-bubble-in'}`}
-                    >
-                      <p>{message.textContent || <em style={{ opacity: 0.5 }}>mídia</em>}</p>
-                      <span>{formatHour(message.sentAt)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <footer className="chat-panel-footer">
-                  <div className="disabled-input">
-                    Campo de envio desabilitado. O produto não envia mensagens, apenas observa e analisa.
-                  </div>
-                </footer>
-              </section>
-            )}
-          </div>
-        )}
+        <ConversationViewer conversations={conversations} />
       </section>
     </main>
   );
@@ -216,12 +147,4 @@ function formatDateTime(value: string | null) {
 function formatDate(value: string | null) {
   if (!value) return 'n/d';
   return new Date(value).toLocaleDateString('pt-BR');
-}
-
-function formatHour(value: string) {
-  return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function lastMessage(messages: Array<{ textContent: string }>) {
-  return messages[messages.length - 1]?.textContent || '(mídia)';
 }
