@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum InstanceStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum ConversationDirection {
+  INBOUND
+  OUTBOUND
+  MIXED
+}
+
+enum AnalysisStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AnalysisType {
+  QUANTITATIVE
+  QUALITATIVE
+}
+
+model Client {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  sector      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  instances   WaInstance[]
+  reports     AnalysisRun[]
+}
+
+model WaInstance {
+  id                String          @id @default(cuid())
+  clientId          String
+  label             String
+  evolutionName     String          @unique
+  phoneNumber       String?
+  status            InstanceStatus  @default(PENDING)
+  connectedAt       DateTime?
+  firstMessageAt    DateTime?
+  lastMessageAt     DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  messages          Message[]
+  conversations     Conversation[]
+  webhookEvents     WebhookEvent[]
+  analysisRuns      AnalysisRun[]
+
+  @@index([clientId, status])
+}
+
+model Contact {
+  id              String          @id @default(cuid())
+  remoteJid       String          @unique
+  displayName     String?
+  phoneNumber     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  messages        Message[]
+  conversations   Conversation[]
+}
+
+model Message {
+  id              String          @id @default(cuid())
+  instanceId      String
+  contactId       String?
+  evolutionMsgId  String          @unique
+  remoteJid       String
+  fromMe          Boolean
+  sentAt          DateTime
+  messageType     String
+  textContent     String?
+  mediaUrl        String?
+  rawPayload      Json
+  createdAt       DateTime        @default(now())
+  instance        WaInstance      @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  contact         Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([instanceId, sentAt])
+  @@index([remoteJid, sentAt])
+}
+
+model Conversation {
+  id                    String                @id @default(cuid())
+  instanceId            String
+  contactId             String?
+  remoteJid             String
+  startedAt             DateTime
+  endedAt               DateTime
+  messageCount          Int                   @default(0)
+  inboundCount          Int                   @default(0)
+  outboundCount         Int                   @default(0)
+  firstResponseAt       DateTime?
+  firstResponseTimeSecs Int?
+  direction             ConversationDirection @default(MIXED)
+  summary               String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  instance              WaInstance            @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  contact               Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([instanceId, startedAt])
+  @@index([remoteJid, startedAt])
+}
+
+model WebhookEvent {
+  id             String      @id @default(cuid())
+  instanceId     String?
+  eventName      String
+  externalRef    String?
+  payload        Json
+  receivedAt     DateTime    @default(now())
+  processedAt    DateTime?
+  instance       WaInstance? @relation(fields: [instanceId], references: [id], onDelete: SetNull)
+
+  @@index([eventName, receivedAt])
+}
+
+model AnalysisRun {
+  id              String         @id @default(cuid())
+  clientId        String
+  instanceId      String?
+  type            AnalysisType
+  status          AnalysisStatus @default(QUEUED)
+  startDate       DateTime
+  endDate         DateTime
+  minimumDaysMet  Boolean        @default(false)
+  reportJson      Json?
+  pdfUrl          String?
+  errorMessage    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  completedAt     DateTime?
+  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  instance        WaInstance?    @relation(fields: [instanceId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, type, status])
+  @@index([instanceId, startDate, endDate])
+}
