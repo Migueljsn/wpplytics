@@ -49,33 +49,37 @@ export async function getInstanceConversations(instanceId: string): Promise<Chat
     where: { instanceId },
     orderBy: { endedAt: 'desc' },
     take: 50,
-    include: {
-      contact: true,
-      messages: {
-        orderBy: { sentAt: 'asc' },
-        take: 200,
-      },
-    },
+    include: { contact: true },
   });
 
-  return conversations.map((conv) => ({
-    id: conv.id,
-    remoteJid: conv.remoteJid,
-    contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
-    startedAt: conv.startedAt.toISOString(),
-    endedAt: conv.endedAt.toISOString(),
-    messageCount: conv.messageCount,
-    inboundCount: conv.inboundCount,
-    outboundCount: conv.outboundCount,
-    firstResponseTimeSecs: conv.firstResponseTimeSecs,
-    messages: conv.messages.map((msg) => ({
-      id: msg.id,
-      fromMe: msg.fromMe,
-      sentAt: msg.sentAt.toISOString(),
-      textContent: msg.textContent ?? '',
-      messageType: normalizeMessageType(msg.messageType),
-    })),
-  }));
+  return Promise.all(
+    conversations.map(async (conv) => {
+      const messages = await prisma.message.findMany({
+        where: { instanceId, remoteJid: conv.remoteJid },
+        orderBy: { sentAt: 'asc' },
+        take: 200,
+      });
+
+      return {
+        id: conv.id,
+        remoteJid: conv.remoteJid,
+        contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
+        startedAt: conv.startedAt.toISOString(),
+        endedAt: conv.endedAt.toISOString(),
+        messageCount: conv.messageCount,
+        inboundCount: conv.inboundCount,
+        outboundCount: conv.outboundCount,
+        firstResponseTimeSecs: conv.firstResponseTimeSecs,
+        messages: messages.map((msg) => ({
+          id: msg.id,
+          fromMe: msg.fromMe,
+          sentAt: msg.sentAt.toISOString(),
+          textContent: msg.textContent ?? '',
+          messageType: normalizeMessageType(msg.messageType),
+        })),
+      };
+    }),
+  );
 }
 
 export async function getReportPreviews(instanceId: string): Promise<{
