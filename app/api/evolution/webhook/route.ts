@@ -177,11 +177,11 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  if (payload.event === 'CONNECTION_UPDATE' && waInstance && payload.data) {
+  if (payload.event === 'connection.update' && waInstance && payload.data) {
     await handleConnectionUpdate(waInstance.id, payload.data as Record<string, unknown>);
   }
 
-  if (payload.event === 'MESSAGES_UPSERT' && waInstance && payload.data) {
+  if (payload.event === 'messages.upsert' && waInstance && payload.data) {
     await handleMessagesUpsert(waInstance, payload.data);
   }
 
