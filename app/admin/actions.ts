@@ -9,12 +9,8 @@ export async function createClient(formData: FormData) {
   const slug = (formData.get('slug') as string).trim().toLowerCase();
   const sector = (formData.get('sector') as string).trim();
 
-  if (!name || !slug) {
-    redirect('/admin?error=Nome+e+slug+são+obrigatórios');
-  }
-  if (!/^[a-z0-9-]+$/.test(slug)) {
-    redirect('/admin?error=Slug+deve+conter+apenas+letras+minúsculas+números+e+hífens');
-  }
+  if (!name || !slug) redirect('/admin?error=Nome+e+slug+são+obrigatórios');
+  if (!/^[a-z0-9-]+$/.test(slug)) redirect('/admin?error=Slug+inválido');
 
   try {
     await prisma.client.create({ data: { name, slug, sector: sector || null } });
@@ -26,14 +22,43 @@ export async function createClient(formData: FormData) {
   redirect('/admin?ok=cliente');
 }
 
+export async function updateClient(formData: FormData) {
+  const id = (formData.get('id') as string).trim();
+  const name = (formData.get('name') as string).trim();
+  const slug = (formData.get('slug') as string).trim().toLowerCase();
+  const sector = (formData.get('sector') as string).trim();
+
+  if (!name || !slug) redirect(`/admin?edit=${id}&error=Nome+e+slug+são+obrigatórios`);
+  if (!/^[a-z0-9-]+$/.test(slug)) redirect(`/admin?edit=${id}&error=Slug+inválido`);
+
+  try {
+    await prisma.client.update({
+      where: { id },
+      data: { name, slug, sector: sector || null },
+    });
+  } catch {
+    redirect(`/admin?edit=${id}&error=Slug+já+existe`);
+  }
+
+  revalidatePath('/admin');
+  redirect('/admin?ok=editado');
+}
+
+export async function deleteClient(formData: FormData) {
+  const id = (formData.get('id') as string).trim();
+
+  await prisma.client.delete({ where: { id } });
+
+  revalidatePath('/admin');
+  redirect('/admin?ok=excluido');
+}
+
 export async function createInstance(formData: FormData) {
   const clientId = (formData.get('clientId') as string).trim();
   const label = (formData.get('label') as string).trim();
   const evolutionName = (formData.get('evolutionName') as string).trim();
 
-  if (!clientId || !label || !evolutionName) {
-    redirect('/admin?error=Todos+os+campos+são+obrigatórios');
-  }
+  if (!clientId || !label || !evolutionName) redirect('/admin?error=Todos+os+campos+são+obrigatórios');
 
   try {
     await prisma.waInstance.create({

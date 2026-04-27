@@ -73,12 +73,15 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         <div className="brand-block">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
-            <form action={async () => {
-              'use server';
-              await signOut({ redirectTo: '/login' });
-            }}>
-              <button type="submit" className="admin-nav-link">Sair</button>
-            </form>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <a href="/admin" className="admin-nav-link">Admin</a>
+              <form action={async () => {
+                'use server';
+                await signOut({ redirectTo: '/login' });
+              }}>
+                <button type="submit" className="admin-nav-link">Sair</button>
+              </form>
+            </div>
           </div>
           <h1>{client.name}</h1>
           <p>{client.sector}</p>
