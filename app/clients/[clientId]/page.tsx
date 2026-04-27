@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
+import { GenerateQualitativeButton } from './generate-qualitative-button';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
@@ -119,9 +120,14 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
                 Gerar Quantitativo
               </button>
             )}
-            <button disabled={!canAnalyze} className="action-button secondary">
-              Gerar Qualitativo
-            </button>
+            <GenerateQualitativeButton
+              clientId={client.id}
+              clientSlug={client.slug}
+              instanceId={selectedInstance.id}
+              from={from?.toISOString() ?? null}
+              to={to.toISOString()}
+              disabled={!canAnalyze}
+            />
           </div>
           <p className={canAnalyze ? 'status-positive' : 'status-warning'}>
             {canAnalyze

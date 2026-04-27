@@ -746,6 +746,57 @@ button { font: inherit; }
 
 .report-footer p { margin: 0; }
 
+/* ── Qualitative report ── */
+.qual-summary {
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.qual-summary p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.qual-tone {
+  margin: 0;
+  padding: 14px 18px;
+  background: var(--brand-soft);
+  border-radius: 12px;
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.qual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.qual-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qual-item {
+  padding: 10px 14px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent, var(--brand));
+  border-radius: 8px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
 /* Print overrides */
 @media print {
   .no-print { display: none !important; }
