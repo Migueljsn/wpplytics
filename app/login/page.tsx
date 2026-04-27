@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import { loginAction } from './actions';
 
 export default function LoginPage() {
@@ -9,6 +10,9 @@ export default function LoginPage() {
   return (
     <main className="login-shell">
       <div className="login-panel">
+        <div className="login-logo">
+          <span className="login-logo-icon">W</span>
+        </div>
         <p className="kicker">WPPlytics</p>
         <h1 className="login-title">Entrar</h1>
         <p className="login-sub">Acesso restrito à equipe autorizada.</p>
@@ -16,34 +20,44 @@ export default function LoginPage() {
         <form action={action} className="login-form">
           <div className="login-field">
             <label htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="seu@email.com"
-              className="login-input"
-            />
+            <div className="login-input-wrap">
+              <Mail size={16} className="login-input-icon" />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                placeholder="seu@email.com"
+                className="login-input login-input-padded"
+              />
+            </div>
           </div>
 
           <div className="login-field">
             <label htmlFor="password">Senha</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              placeholder="••••••••"
-              className="login-input"
-            />
+            <div className="login-input-wrap">
+              <Lock size={16} className="login-input-icon" />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                placeholder="••••••••"
+                className="login-input login-input-padded"
+              />
+            </div>
           </div>
 
           {error && <p className="login-error">{error}</p>}
 
           <button type="submit" disabled={pending} className="action-button login-submit">
-            {pending ? 'Entrando…' : 'Entrar'}
+            {pending ? (
+              <><Loader2 size={16} className="spin-icon" /> Entrando…</>
+            ) : (
+              <><LogIn size={16} /> Entrar</>
+            )}
           </button>
         </form>
       </div>

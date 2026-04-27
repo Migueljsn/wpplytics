@@ -1,5 +1,6 @@
 import { signOut } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { Users, Plus, Pencil, Trash2, Wifi, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { createClient, updateClient, deleteClient, createInstance } from './actions';
 
 type SearchParams = Promise<{ error?: string; ok?: string; edit?: string; delete?: string }>;
@@ -19,14 +20,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     <div className="admin-shell">
       <header className="admin-header">
         <div>
-          <p className="kicker">WPPlytics</p>
+          <p className="kicker" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ShieldCheck size={14} style={{ opacity: 0.7 }} /> WPPlytics
+          </p>
           <h1 className="admin-title">Painel de Administração</h1>
         </div>
         <form action={async () => {
           'use server';
           await signOut({ redirectTo: '/login' });
         }}>
-          <button type="submit" className="action-button secondary admin-signout">Sair</button>
+          <button type="submit" className="action-button secondary admin-signout" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <LogOut size={14} /> Sair
+          </button>
         </form>
       </header>
 
@@ -40,9 +45,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
         {/* ── Clients list ── */}
         <section className="admin-card">
-          <h2 className="admin-card-title">
-            Clientes
-            <span className="cv-badge" style={{ marginLeft: 8 }}>{clients.length}</span>
+          <h2 className="admin-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Users size={16} /> Clientes
+            <span className="cv-badge" style={{ marginLeft: 4 }}>{clients.length}</span>
           </h2>
 
           {clients.length === 0 ? (
@@ -74,14 +79,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   </div>
 
                   <div className="admin-client-actions">
-                    <a href={`/clients/${client.slug}`} className="action-button" style={{ fontSize: '0.8rem', minHeight: 32, padding: '0 12px', textDecoration: 'none' }}>
-                      Dashboard
+                    <a href={`/clients/${client.slug}`} className="action-button" style={{ fontSize: '0.8rem', minHeight: 32, padding: '0 12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <LayoutDashboard size={13} /> Dashboard
                     </a>
-                    <a href={`/admin?edit=${client.id}`} className="action-button secondary" style={{ fontSize: '0.8rem', minHeight: 32, padding: '0 12px', textDecoration: 'none' }}>
-                      Editar
+                    <a href={`/admin?edit=${client.id}`} className="action-button secondary" style={{ fontSize: '0.8rem', minHeight: 32, padding: '0 12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Pencil size={13} /> Editar
                     </a>
-                    <a href={`/admin?delete=${client.id}`} className="admin-delete-link" style={{ fontSize: '0.8rem', textDecoration: 'none' }}>
-                      Excluir
+                    <a href={`/admin?delete=${client.id}`} className="admin-delete-link" style={{ fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Trash2 size={13} /> Excluir
                     </a>
                   </div>
                 </li>
@@ -150,7 +155,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           {!editingClient && !deletingClient && (
             <>
               <section className="admin-card">
-                <h2 className="admin-card-title">Novo cliente</h2>
+                <h2 className="admin-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={16} /> Novo cliente</h2>
                 <form action={createClient} className="admin-form">
                   <div className="admin-field">
                     <label>Nome</label>
@@ -164,12 +169,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                     <label>Setor <span className="muted">(opcional)</span></label>
                     <input name="sector" placeholder="Ex: Varejo" className="admin-input" />
                   </div>
-                  <button type="submit" className="action-button">Criar cliente</button>
+                  <button type="submit" className="action-button" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> Criar cliente</button>
                 </form>
               </section>
 
               <section className="admin-card">
-                <h2 className="admin-card-title">Nova instância WhatsApp</h2>
+                <h2 className="admin-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wifi size={16} /> Nova instância WhatsApp</h2>
                 <form action={createInstance} className="admin-form">
                   <div className="admin-field">
                     <label>Cliente</label>
@@ -189,7 +194,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                     <input name="evolutionName" required placeholder="Ex: WHATSAPP-BAILEYS" className="admin-input" />
                     <span className="admin-hint">Deve ser idêntico ao nome da instância no painel da Evolution API.</span>
                   </div>
-                  <button type="submit" className="action-button">Criar instância</button>
+                  <button type="submit" className="action-button" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> Criar instância</button>
                 </form>
               </section>
             </>

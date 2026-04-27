@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { MessageSquare, Lock, Clock, EyeOff, RefreshCw, Paperclip, X } from 'lucide-react';
 import type { ChatConversation, ChatMessage } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -60,7 +61,7 @@ function renderMessages(messages: ChatMessage[]) {
         {msg.textContent ? (
           <p>{msg.textContent}</p>
         ) : (
-          <p className="cv-media">📎 mídia</p>
+          <p className="cv-media"><Paperclip size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />mídia</p>
         )}
         <time>{formatTime(msg.sentAt)}</time>
       </div>,
@@ -143,6 +144,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   if (conversations.length === 0) {
     return (
       <div className="cv-empty">
+        <MessageSquare size={32} className="cv-empty-icon" />
         <p>Nenhuma conversa registrada ainda.<br />Aguardando mensagens via WhatsApp.</p>
       </div>
     );
@@ -151,6 +153,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   if (visible.length === 0) {
     return (
       <div className="cv-empty">
+        <EyeOff size={32} className="cv-empty-icon" />
         <p>Todas as conversas foram ocultadas.</p>
       </div>
     );
@@ -160,11 +163,15 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     <div className="cv-layout">
       <div className="cv-list">
         <div className="cv-list-header">
-          <span>Conversas</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MessageSquare size={14} />
+            Conversas
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="cv-badge">{visible.length}</span>
-            <span className="cv-sync-label">
-              {secondsAgo < 5 ? 'agora' : `${secondsAgo}s atrás`}
+            <span className="cv-sync-label" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <RefreshCw size={11} className={secondsAgo < 5 ? 'spin-icon' : ''} style={{ opacity: 0.6 }} />
+              {secondsAgo < 5 ? 'agora' : `${secondsAgo}s`}
             </span>
           </div>
         </div>
@@ -202,7 +209,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                   disabled={isDeleting}
                   onClick={(e) => { e.stopPropagation(); setConfirmId(conv.id); }}
                 >
-                  {isDeleting ? '…' : '×'}
+                  {isDeleting ? <RefreshCw size={12} className="spin-icon" /> : <X size={14} />}
                 </button>
               </div>
             );
@@ -225,7 +232,9 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                   TMP {Math.round(selected.firstResponseTimeSecs / 60)}min
                 </span>
               )}
-              <span className="cv-chip-readonly">Somente leitura</span>
+              <span className="cv-chip-readonly" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Lock size={11} /> Somente leitura
+              </span>
             </div>
           </div>
 
@@ -235,7 +244,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
 
           <div className="cv-footer">
             <div className="cv-disabled-input">
-              🔒 Envio de mensagens desabilitado — modo observação
+              <Lock size={13} style={{ flexShrink: 0 }} /> Envio de mensagens desabilitado — modo observação
             </div>
           </div>
         </div>
@@ -259,7 +268,7 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                   Cancelar
                 </button>
                 <button className="action-button cv-modal-danger" onClick={() => void confirmDelete()}>
-                  Ocultar
+                  <EyeOff size={14} /> Ocultar
                 </button>
               </div>
             </div>

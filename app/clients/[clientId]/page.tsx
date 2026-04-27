@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp, ChevronRight } from 'lucide-react';
 import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
@@ -73,22 +74,29 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         <div className="brand-block">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <a href="/admin" className="admin-nav-link">Admin</a>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <ShieldCheck size={13} /> Admin
+              </a>
               <form action={async () => {
                 'use server';
                 await signOut({ redirectTo: '/login' });
               }}>
-                <button type="submit" className="admin-nav-link">Sair</button>
+                <button type="submit" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <LogOut size={13} /> Sair
+                </button>
               </form>
             </div>
           </div>
-          <h1>{client.name}</h1>
-          <p>{client.sector}</p>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Building2 size={20} style={{ opacity: 0.6, flexShrink: 0 }} />
+            {client.name}
+          </h1>
+          {client.sector && <p>{client.sector}</p>}
         </div>
 
         <section className="sidebar-card">
-          <h2>Instância conectada</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wifi size={15} /> Instância conectada</h2>
           <div className="instance-badge">{selectedInstance.label}</div>
           <dl className="metric-list">
             <div>
@@ -119,18 +127,18 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         </section>
 
         <section className="sidebar-card">
-          <h2>Relatórios</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart2 size={15} /> Relatórios</h2>
           <p className="muted">
             Liberado com no mínimo 5 dias de histórico coletado a partir da primeira mensagem.
           </p>
           <div className="action-stack">
             {canQuantitative ? (
-              <a href={reportHref} className="action-button" style={{ textDecoration: 'none' }}>
-                Gerar Quantitativo
+              <a href={reportHref} className="action-button" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BarChart2 size={15} /> Gerar Quantitativo
               </a>
             ) : (
-              <button disabled className="action-button">
-                Gerar Quantitativo
+              <button disabled className="action-button" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BarChart2 size={15} /> Gerar Quantitativo
               </button>
             )}
             <GenerateQualitativeButton
@@ -150,14 +158,15 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         </section>
 
         <section className="sidebar-card">
-          <h2>Prévia do período</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={15} /> Prévia do período</h2>
           <div className="preview-block">
-            <h3>Quantitativo</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 5 }}><BarChart2 size={13} /> Quantitativo</h3>
             <ul>
-              <li>{previews.quantitative.totalConversations} conversas</li>
-              <li>{previews.quantitative.totalMessages} mensagens</li>
-              <li>{previews.quantitative.responseRate}% taxa de resposta</li>
+              <li><MessageSquare size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4, opacity: 0.5 }} />{previews.quantitative.totalConversations} conversas</li>
+              <li><Hash size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4, opacity: 0.5 }} />{previews.quantitative.totalMessages} mensagens</li>
+              <li><TrendingUp size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4, opacity: 0.5 }} />{previews.quantitative.responseRate}% taxa de resposta</li>
               <li>
+                <Clock size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4, opacity: 0.5 }} />
                 {previews.quantitative.averageFirstResponseMinutes > 0
                   ? `${previews.quantitative.averageFirstResponseMinutes} min TMP médio`
                   : 'TMP ainda calculando'}
@@ -165,7 +174,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
             </ul>
           </div>
           <div className="preview-block">
-            <h3>Qualitativo</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Sparkles size={13} /> Qualitativo</h3>
             <p className="muted" style={{ margin: 0 }}>
               Disponível após geração do relatório.
             </p>
@@ -177,7 +186,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         <header className="content-header">
           <div>
             <p className="kicker">Histórico interno</p>
-            <h2>Conversas e chat</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={18} style={{ opacity: 0.6 }} /> Conversas e chat</h2>
           </div>
           <Suspense fallback={<div className="date-filter-skeleton" />}>
             <DateFilter current={activePeriod} />

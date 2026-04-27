@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { MessageSquare, Hash, TrendingUp, Clock, AlertCircle, BarChart2, Printer, ChevronLeft } from 'lucide-react';
 import { getDashboardClient, getQuantitativeReport } from '@/lib/dashboard';
 import { PrintButton } from './print-button';
 
@@ -59,19 +60,23 @@ export default async function ReportPage({ params, searchParams }: Props) {
         </header>
 
         <section className="report-kpis">
-          <div className="kpi-card">
+          <div className="kpi-card" style={{ animationDelay: '0ms' }}>
+            <MessageSquare size={18} className="kpi-icon" />
             <span className="kpi-value">{report.totalConversations}</span>
             <span className="kpi-label">Conversas</span>
           </div>
-          <div className="kpi-card">
+          <div className="kpi-card" style={{ animationDelay: '60ms' }}>
+            <Hash size={18} className="kpi-icon" />
             <span className="kpi-value">{report.totalMessages}</span>
             <span className="kpi-label">Msgs recebidas</span>
           </div>
-          <div className="kpi-card kpi-card-brand">
+          <div className="kpi-card kpi-card-brand" style={{ animationDelay: '120ms' }}>
+            <TrendingUp size={18} className="kpi-icon" />
             <span className="kpi-value">{report.responseRate}%</span>
             <span className="kpi-label">Taxa de resposta</span>
           </div>
-          <div className="kpi-card">
+          <div className="kpi-card" style={{ animationDelay: '180ms' }}>
+            <Clock size={18} className="kpi-icon" />
             <span className="kpi-value">
               {report.averageFirstResponseMinutes != null
                 ? `${report.averageFirstResponseMinutes}min`
@@ -79,11 +84,13 @@ export default async function ReportPage({ params, searchParams }: Props) {
             </span>
             <span className="kpi-label">TMP médio</span>
           </div>
-          <div className="kpi-card kpi-card-warn">
+          <div className="kpi-card kpi-card-warn" style={{ animationDelay: '240ms' }}>
+            <AlertCircle size={18} className="kpi-icon" />
             <span className="kpi-value">{report.noResponseCount}</span>
             <span className="kpi-label">Sem resposta</span>
           </div>
-          <div className="kpi-card">
+          <div className="kpi-card" style={{ animationDelay: '300ms' }}>
+            <BarChart2 size={18} className="kpi-icon" />
             <span className="kpi-value">{report.averageMessagesPerConversation}</span>
             <span className="kpi-label">Msgs/conversa</span>
           </div>
@@ -92,12 +99,15 @@ export default async function ReportPage({ params, searchParams }: Props) {
         <section className="report-section">
           <h2 className="report-section-title">Mensagens recebidas por hora do dia</h2>
           <div className="report-bars">
-            {report.byHour.map(({ hour, count }) => (
+            {report.byHour.map(({ hour, count }, i) => (
               <div key={hour} className="report-bar-col">
                 <span className="report-bar-count">{count > 0 ? count : ''}</span>
                 <div
                   className="report-bar-fill"
-                  style={{ height: `${Math.round((count / maxHour) * 100)}%` }}
+                  style={{
+                    height: `${Math.round((count / maxHour) * 100)}%`,
+                    animationDelay: `${i * 20}ms`,
+                  }}
                 />
                 <span className="report-bar-label">{String(hour).padStart(2, '0')}h</span>
               </div>
@@ -108,13 +118,16 @@ export default async function ReportPage({ params, searchParams }: Props) {
         <section className="report-section">
           <h2 className="report-section-title">Mensagens recebidas por dia da semana</h2>
           <div className="report-day-bars">
-            {report.byDayOfWeek.map(({ day, label: dayLabel, count }) => (
+            {report.byDayOfWeek.map(({ day, label: dayLabel, count }, i) => (
               <div key={day} className="report-day-row">
                 <span className="report-day-name">{dayLabel}</span>
                 <div className="report-day-track">
                   <div
                     className="report-day-fill"
-                    style={{ width: `${Math.round((count / maxDay) * 100)}%` }}
+                    style={{
+                      width: `${Math.round((count / maxDay) * 100)}%`,
+                      animationDelay: `${i * 60}ms`,
+                    }}
                   />
                 </div>
                 <span className="report-day-count">{count}</span>
