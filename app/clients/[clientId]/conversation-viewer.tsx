@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ChatConversation, ChatMessage } from '@/lib/types';
+
+const POLL_INTERVAL_MS = 15_000;
 
 function initials(name: string) {
   return name
@@ -68,16 +71,49 @@ function renderMessages(messages: ChatMessage[]) {
 }
 
 export function ConversationViewer({ conversations }: { conversations: ChatConversation[] }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(conversations[0]?.id ?? null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [secondsAgo, setSecondsAgo] = useState(0);
   const threadRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
 
+  // Auto-scroll only when user is near the bottom
   useEffect(() => {
-    if (threadRef.current) {
+    const el = threadRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (threadRef.current && isAtBottomRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
-  }, [selectedId]);
+  }, [selectedId, conversations]);
+
+  // Polling: refresh server data every 15s
+  useEffect(() => {
+    const poll = setInterval(() => {
+      router.refresh();
+      setLastUpdated(new Date());
+      setSecondsAgo(0);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(poll);
+  }, [router]);
+
+  // Tick the "X segundos atrás" counter
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setSecondsAgo(Math.round((Date.now() - lastUpdated.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [lastUpdated]);
 
   if (conversations.length === 0) {
     return (
@@ -92,7 +128,12 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
       <div className="cv-list">
         <div className="cv-list-header">
           <span>Conversas</span>
-          <span className="cv-badge">{conversations.length}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="cv-badge">{conversations.length}</span>
+            <span className="cv-sync-label">
+              {secondsAgo < 5 ? 'agora' : `${secondsAgo}s atrás`}
+            </span>
+          </div>
         </div>
         <div className="cv-list-scroll">
           {conversations.map((conv) => {

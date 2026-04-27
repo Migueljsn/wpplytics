@@ -281,6 +281,12 @@ button { font: inherit; }
   border-radius: 99px;
 }
 
+.cv-sync-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .cv-list-scroll {
   flex: 1;
   overflow-y: auto;
