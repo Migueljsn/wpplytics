@@ -71,19 +71,19 @@ function ImageBubble({ msg }: { msg: ChatMessage }) {
   return (
     <>
       <div className={`cv-media-image${isSticker ? ' cv-media-sticker' : ''}`}>
-        {status === 'loading' && <div className="cv-img-skeleton" />}
         {status === 'error' ? (
           <div className="cv-img-error">
             <ImageOff size={20} />
             <span>Imagem não disponível</span>
           </div>
         ) : (
-          <div className="cv-img-wrap" style={{ display: status === 'loading' ? 'none' : undefined }}>
+          <div className="cv-img-wrap">
+            {status === 'loading' && <div className="cv-img-skeleton" />}
             <img
               src={src}
               alt={msg.mediaCaption ?? 'imagem'}
               className="cv-img-thumb"
-              loading="lazy"
+              style={{ opacity: status === 'loading' ? 0 : 1 }}
               onLoad={() => setStatus('loaded')}
               onError={() => setStatus('error')}
             />

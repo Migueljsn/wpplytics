@@ -680,13 +680,15 @@ button { font: inherit; }
 }
 .cv-media-sticker { max-width: 120px; background: none; border: none !important; }
 
+.cv-img-wrap { position: relative; line-height: 0; min-width: 100px; min-height: 60px; }
 .cv-img-skeleton {
-  width: 180px; height: 140px; border-radius: 8px;
+  position: absolute; inset: 0;
+  border-radius: 8px;
   background: linear-gradient(90deg, var(--line) 25%, var(--panel-muted) 50%, var(--line) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
+  z-index: 1;
 }
-.cv-img-wrap { position: relative; line-height: 0; }
 .cv-img-thumb {
   display: block; max-width: 220px; max-height: 200px;
   min-width: 100px; min-height: 60px;
