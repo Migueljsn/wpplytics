@@ -873,6 +873,301 @@ button { font: inherit; }
   padding: 3px 0;
 }
 
+/* ── Report section subtitle ── */
+.report-section-sub {
+  margin: -8px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ── Visão Geral — barras inbound/outbound ── */
+.report-overview {
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.overview-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.overview-bar-label {
+  width: 170px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.overview-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.overview-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transform-origin: left;
+  animation: barGrowX 0.7s var(--ease-spring) both;
+}
+.overview-bar-value {
+  width: 120px;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.overview-proactivity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.overview-ratio {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.overview-ratio-ok  { color: var(--brand); }
+.overview-ratio-warn { color: var(--warn); }
+
+/* ── Alertas ── */
+.report-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.report-alert svg { flex-shrink: 0; margin-top: 1px; }
+.report-alert-warn {
+  background: #fff8ee;
+  border-color: var(--warn);
+  color: #7a500a;
+}
+html.dark .report-alert-warn {
+  background: rgba(227,179,65,0.08);
+  color: var(--warn);
+}
+
+/* ── TMP cards ── */
+.report-tmp-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.tmp-card {
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  background: var(--panel-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tmp-card-warn   { border-left-color: var(--red); }
+.tmp-card-ok     { border-left-color: var(--brand); }
+.tmp-card-neutral { border-left-color: var(--blue); }
+.tmp-card-label { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+.tmp-card-sub   { font-size: 0.74rem; color: var(--muted); margin-bottom: 6px; }
+.tmp-card-value { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text); line-height: 1; }
+.tmp-card-warn .tmp-card-value { color: var(--red); }
+.tmp-card-ok   .tmp-card-value { color: var(--brand); }
+.tmp-card-bench { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+/* ── Distribuição por Velocidade ── */
+.speed-buckets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.speed-bucket-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.speed-bucket-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.speed-bucket-label {
+  width: 180px;
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  color: var(--text);
+}
+.speed-bucket-track {
+  flex: 1;
+  height: 8px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.speed-bucket-fill {
+  height: 100%;
+  border-radius: 99px;
+  transform-origin: left;
+  animation: barGrowX 0.6s var(--ease-spring) both;
+  opacity: 0.85;
+}
+.speed-bucket-value {
+  width: 100px;
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.report-note {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+.report-note svg { flex-shrink: 0; margin-top: 2px; }
+
+/* ── Performance de Atendimento ── */
+.perf-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.perf-card {
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  background: var(--panel-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.perf-card-red  { border-left-color: var(--red); }
+.perf-card-warn { border-left-color: var(--warn); }
+.perf-card-green { border-left-color: var(--brand); }
+.perf-card-title { font-size: 0.74rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.perf-card-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--text); }
+.perf-card-red  .perf-card-value { color: var(--red); }
+.perf-card-warn .perf-card-value { color: var(--warn); }
+.perf-card-green .perf-card-value { color: var(--brand); }
+.perf-card-bench { font-size: 0.72rem; color: var(--muted); }
+
+/* ── Tabelas ── */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.report-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--line);
+}
+.report-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+.report-table tr:last-child td { border-bottom: none; }
+.report-table tbody tr:hover { background: rgba(15,157,117,0.04); }
+.table-row-warn td:first-child { border-left: 3px solid var(--red); }
+.table-row-ok   td:first-child { border-left: 3px solid var(--brand); }
+.table-row-peak { background: var(--brand-soft) !important; }
+.table-row-peak td { font-weight: 600; }
+.td-hour  { font-weight: 700; }
+.td-tmp   { }
+.td-count { color: var(--muted); }
+.td-status { }
+.td-date  { display: flex; align-items: center; gap: 8px; }
+.peak-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--brand);
+  background: rgba(15,157,117,0.12);
+  border: 1px solid rgba(15,157,117,0.25);
+  border-radius: 99px;
+  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.status-dot-ok, .status-dot-warn {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.status-dot-ok   { background: var(--brand); }
+.status-dot-warn { background: var(--red); }
+
+/* ── Volume summary ── */
+.volume-summary {
+  display: flex;
+  gap: 32px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.volume-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.volume-summary-item svg { color: var(--brand); opacity: 0.8; }
+.volume-summary-item strong { color: var(--text); font-size: 1.2rem; font-weight: 800; }
+
+/* ── Benchmarks ── */
+.benchmark-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.benchmark-card {
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.benchmark-icon { color: var(--brand); opacity: 0.7; }
+.benchmark-label { font-size: 0.74rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.benchmark-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: var(--brand); }
+
 /* Day-of-week bars */
 .report-day-bars { display: flex; flex-direction: column; gap: 10px; }
 .report-day-row { display: flex; align-items: center; gap: 12px; }

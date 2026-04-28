@@ -60,14 +60,48 @@ export type QualitativePreview = {
   objections: string[];
 };
 
+export type ResponseTimeBucket = {
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+};
+
+export type TmpByHour = {
+  hourRange: string;
+  avgMinutes: number;
+  count: number;
+};
+
+export type VolumeByDate = {
+  date: string;
+  dayOfWeek: string;
+  count: number;
+  isPeak: boolean;
+};
+
 export type QuantitativeReport = {
   period: { from: string | null; to: string };
+  // Totais
   totalConversations: number;
   totalMessages: number;
+  inboundMessages: number;
+  outboundMessages: number;
+  inboundPercent: number;
+  outboundPercent: number;
+  proactivityRatio: number;
+  dailyAverage: number;
+  // Resposta
   responseRate: number;
   noResponseCount: number;
   averageFirstResponseMinutes: number | null;
+  medianFirstResponseMinutes: number | null;
   averageMessagesPerConversation: number;
+  // Distribuições
   byHour: { hour: number; count: number }[];
   byDayOfWeek: { day: number; label: string; count: number }[];
+  responseTimeBuckets: ResponseTimeBucket[];
+  tmpByHour: TmpByHour[];
+  volumeByDate: VolumeByDate[];
+  benchmarks: { tmpIdealMinutes: number; minResponseRate: number };
 };
