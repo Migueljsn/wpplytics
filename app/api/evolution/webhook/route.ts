@@ -69,6 +69,22 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
         (extMsg?.text as string | undefined) ??
         null;
 
+      // Extract media metadata
+      const msgType = (msg?.messageType as string) ?? 'unknown';
+      const mediaTypeMap: Record<string, string> = {
+        audioMessage: 'audioMessage', pttMessage: 'audioMessage',
+        imageMessage: 'imageMessage', videoMessage: 'videoMessage',
+        documentMessage: 'documentMessage', documentWithCaptionMessage: 'documentMessage',
+        stickerMessage: 'stickerMessage',
+      };
+      const mediaKey = mediaTypeMap[msgType];
+      const mediaData = mediaKey ? (msgData?.[mediaKey] as Record<string, unknown> | undefined) : undefined;
+      const mediaCaption = (mediaData?.caption as string | undefined) ?? null;
+      const mediaFileName = (mediaData?.fileName as string | undefined) ?? (mediaData?.title as string | undefined) ?? null;
+      const mediaMimetype = (mediaData?.mimetype as string | undefined) ?? null;
+      const mediaDuration = (mediaData?.seconds as number | undefined) ?? null;
+      const mediaSize = (mediaData?.fileLength as number | undefined) ?? null;
+
       try {
         await prisma.message.create({
           data: {
@@ -78,8 +94,13 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
             remoteJid,
             fromMe,
             sentAt,
-            messageType: (msg?.messageType as string) ?? 'unknown',
+            messageType: msgType,
             textContent,
+            mediaCaption,
+            mediaFileName,
+            mediaMimetype,
+            mediaDuration,
+            mediaSize,
             rawPayload: msg as object,
           },
         });

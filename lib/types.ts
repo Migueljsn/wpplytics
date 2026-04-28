@@ -3,7 +3,12 @@ export type ChatMessage = {
   fromMe: boolean;
   sentAt: string;
   textContent: string;
-  messageType: 'text' | 'audio' | 'image' | 'document' | 'unknown';
+  messageType: 'text' | 'audio' | 'image' | 'document' | 'video' | 'sticker' | 'unknown';
+  mediaCaption?: string | null;
+  mediaFileName?: string | null;
+  mediaMimetype?: string | null;
+  mediaDuration?: number | null;
+  mediaSize?: number | null;
 };
 
 export type ChatConversation = {

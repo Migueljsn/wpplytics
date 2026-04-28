@@ -39,11 +39,13 @@ export async function getDashboardClient(clientId: string): Promise<DashboardCli
   };
 }
 
-function normalizeMessageType(type: string): 'text' | 'audio' | 'image' | 'document' | 'unknown' {
+function normalizeMessageType(type: string): 'text' | 'audio' | 'image' | 'document' | 'video' | 'sticker' | 'unknown' {
   if (type === 'conversation' || type === 'extendedTextMessage') return 'text';
-  if (type === 'audioMessage') return 'audio';
+  if (type === 'audioMessage' || type === 'pttMessage') return 'audio';
   if (type === 'imageMessage') return 'image';
-  if (type === 'documentMessage') return 'document';
+  if (type === 'documentMessage' || type === 'documentWithCaptionMessage') return 'document';
+  if (type === 'videoMessage') return 'video';
+  if (type === 'stickerMessage') return 'sticker';
   return 'unknown';
 }
 
@@ -84,6 +86,11 @@ export async function getInstanceConversations(
           sentAt: msg.sentAt.toISOString(),
           textContent: msg.textContent ?? '',
           messageType: normalizeMessageType(msg.messageType),
+          mediaCaption: msg.mediaCaption,
+          mediaFileName: msg.mediaFileName,
+          mediaMimetype: msg.mediaMimetype,
+          mediaDuration: msg.mediaDuration,
+          mediaSize: msg.mediaSize,
         })),
       };
     }),

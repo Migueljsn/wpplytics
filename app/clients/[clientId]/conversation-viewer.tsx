@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Lock, Clock, EyeOff, RefreshCw, Paperclip, X } from 'lucide-react';
+import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download } from 'lucide-react';
 import type { ChatConversation, ChatMessage } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -38,6 +38,85 @@ function formatDateLabel(iso: string) {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
+function formatBytes(bytes?: number | null) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatDuration(secs?: number | null) {
+  if (!secs) return '';
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function MediaBubble({ msg }: { msg: ChatMessage }) {
+  const [imgOpen, setImgOpen] = useState(false);
+  const src = `/api/media/${msg.id}`;
+
+  if (msg.messageType === 'audio') {
+    return (
+      <div className="cv-media-audio">
+        <Mic size={14} className="cv-media-icon" />
+        <audio controls preload="none" className="cv-audio-player">
+          <source src={src} type={msg.mediaMimetype ?? 'audio/ogg'} />
+        </audio>
+        {msg.mediaDuration && <span className="cv-media-meta">{formatDuration(msg.mediaDuration)}</span>}
+      </div>
+    );
+  }
+
+  if (msg.messageType === 'image' || msg.messageType === 'sticker') {
+    return (
+      <>
+        <div className="cv-media-image" onClick={() => setImgOpen(true)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && setImgOpen(true)}>
+          <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-img-thumb" loading="lazy" />
+          {msg.messageType === 'sticker' && <span className="cv-media-tag">Sticker</span>}
+        </div>
+        {msg.mediaCaption && <p className="cv-media-caption">{msg.mediaCaption}</p>}
+        {imgOpen && (
+          <div className="cv-lightbox" onClick={() => setImgOpen(false)}>
+            <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-lightbox-img" />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (msg.messageType === 'document') {
+    return (
+      <a href={src} download={msg.mediaFileName ?? true} className="cv-media-doc" target="_blank" rel="noreferrer">
+        <FileText size={20} className="cv-media-icon" />
+        <div className="cv-media-doc-info">
+          <span className="cv-media-doc-name">{msg.mediaFileName ?? 'Documento'}</span>
+          {msg.mediaSize && <span className="cv-media-meta">{formatBytes(msg.mediaSize)}</span>}
+        </div>
+        <Download size={14} className="cv-media-dl" />
+      </a>
+    );
+  }
+
+  if (msg.messageType === 'video') {
+    return (
+      <div className="cv-media-video">
+        <Video size={16} className="cv-media-icon" />
+        <span>Vídeo</span>
+        {msg.mediaDuration && <span className="cv-media-meta">{formatDuration(msg.mediaDuration)}</span>}
+        {msg.mediaSize && <span className="cv-media-meta">{formatBytes(msg.mediaSize)}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="cv-media-unknown">
+      <Paperclip size={13} className="cv-media-icon" />
+      <span>Mídia</span>
+    </div>
+  );
+}
+
 function renderMessages(messages: ChatMessage[]) {
   if (messages.length === 0) {
     return <div className="cv-thread-empty">Sem mensagens nesta conversa.</div>;
@@ -56,12 +135,15 @@ function renderMessages(messages: ChatMessage[]) {
         </div>,
       );
     }
+    const isMedia = msg.messageType !== 'text' && msg.messageType !== 'unknown';
     nodes.push(
       <div key={msg.id} className={`cv-bubble ${msg.fromMe ? 'cv-bubble-out' : 'cv-bubble-in'}`}>
         {msg.textContent ? (
           <p>{msg.textContent}</p>
+        ) : isMedia ? (
+          <MediaBubble msg={msg} />
         ) : (
-          <p className="cv-media"><Paperclip size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />mídia</p>
+          <p className="cv-media-unknown"><Paperclip size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />mídia</p>
         )}
         <time>{formatTime(msg.sentAt)}</time>
       </div>,

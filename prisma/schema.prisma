@@ -101,6 +101,11 @@ model Message {
   messageType     String
   textContent     String?
   mediaUrl        String?
+  mediaCaption    String?
+  mediaFileName   String?
+  mediaMimetype   String?
+  mediaDuration   Int?
+  mediaSize       Int?
   rawPayload      Json
   createdAt       DateTime        @default(now())
   instance        WaInstance      @relation(fields: [instanceId], references: [id], onDelete: Cascade)
