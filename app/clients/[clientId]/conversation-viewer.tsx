@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download } from 'lucide-react';
+import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn } from 'lucide-react';
 import type { ChatConversation, ChatMessage } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -52,8 +53,68 @@ function formatDuration(secs?: number | null) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function ImageBubble({ msg }: { msg: ChatMessage }) {
+  const src = `/api/media/${msg.id}`;
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [open, setOpen] = useState(false);
+  const isSticker = msg.messageType === 'sticker';
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, close]);
+
+  return (
+    <>
+      <div className={`cv-media-image${isSticker ? ' cv-media-sticker' : ''}`}>
+        {status === 'loading' && <div className="cv-img-skeleton" />}
+        {status === 'error' ? (
+          <div className="cv-img-error">
+            <ImageOff size={20} />
+            <span>Imagem não disponível</span>
+          </div>
+        ) : (
+          <div className="cv-img-wrap" style={{ display: status === 'loading' ? 'none' : undefined }}>
+            <img
+              src={src}
+              alt={msg.mediaCaption ?? 'imagem'}
+              className="cv-img-thumb"
+              loading="lazy"
+              onLoad={() => setStatus('loaded')}
+              onError={() => setStatus('error')}
+            />
+            {status === 'loaded' && !isSticker && (
+              <button className="cv-img-zoom" onClick={() => setOpen(true)} aria-label="Ampliar imagem">
+                <ZoomIn size={14} />
+              </button>
+            )}
+          </div>
+        )}
+        {isSticker && <span className="cv-media-tag">Sticker</span>}
+      </div>
+      {msg.mediaCaption && <p className="cv-media-caption">{msg.mediaCaption}</p>}
+
+      {open && typeof document !== 'undefined' && createPortal(
+        <div className="cv-lightbox" onClick={close} role="dialog" aria-modal="true">
+          <div className="cv-lightbox-inner" onClick={e => e.stopPropagation()}>
+            <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-lightbox-img" />
+            {msg.mediaCaption && <p className="cv-lightbox-caption">{msg.mediaCaption}</p>}
+          </div>
+          <button className="cv-lightbox-close" onClick={close} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
 function MediaBubble({ msg }: { msg: ChatMessage }) {
-  const [imgOpen, setImgOpen] = useState(false);
   const src = `/api/media/${msg.id}`;
 
   if (msg.messageType === 'audio') {
@@ -69,20 +130,7 @@ function MediaBubble({ msg }: { msg: ChatMessage }) {
   }
 
   if (msg.messageType === 'image' || msg.messageType === 'sticker') {
-    return (
-      <>
-        <div className="cv-media-image" onClick={() => setImgOpen(true)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && setImgOpen(true)}>
-          <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-img-thumb" loading="lazy" />
-          {msg.messageType === 'sticker' && <span className="cv-media-tag">Sticker</span>}
-        </div>
-        {msg.mediaCaption && <p className="cv-media-caption">{msg.mediaCaption}</p>}
-        {imgOpen && (
-          <div className="cv-lightbox" onClick={() => setImgOpen(false)}>
-            <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-lightbox-img" />
-          </div>
-        )}
-      </>
-    );
+    return <ImageBubble msg={msg} />;
   }
 
   if (msg.messageType === 'document') {

@@ -109,7 +109,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           {/* Delete confirmation */}
           {deletingClient && (
             <section className="admin-card admin-danger-card">
-              <h2 className="admin-card-title" style={{ color: '#c0392b' }}>Excluir cliente</h2>
+              <h2 className="admin-card-title" style={{ color: 'var(--red)' }}>Excluir cliente</h2>
               <p style={{ fontSize: '0.88rem', color: 'var(--text)', lineHeight: 1.6 }}>
                 Você está prestes a excluir <strong>{deletingClient.name}</strong>.
                 <br />
