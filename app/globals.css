@@ -722,7 +722,7 @@ button { font: inherit; }
 .report-doc {
   width: min(900px, 100%);
   margin: 0 auto;
-  background: white;
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
@@ -773,6 +773,32 @@ button { font: inherit; }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
 .kpi-card-brand { background: var(--brand-soft); border-color: rgba(15,157,117,0.2); }
 .kpi-card-warn  { background: #fff8ee; border-color: #f0d090; }
+
+/* ── Report nav bar ── */
+.report-nav {
+  width: min(900px, 100%);
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.report-nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color var(--transition);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+}
+.report-nav-back:hover { color: var(--brand); }
+.report-nav-controls { display: flex; align-items: center; gap: 8px; }
 
 .kpi-value {
   font-size: 1.9rem;
@@ -1141,6 +1167,60 @@ select.admin-input { cursor: pointer; }
 }
 .admin-nav-link:hover { color: var(--brand); }
 
+/* Admin header controls */
+.admin-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+.admin-user-chip:hover { border-color: var(--brand); }
+.admin-user-avatar {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--brand), var(--blue));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+.admin-user-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0 10px 0 8px;
+}
+.admin-signout-btn {
+  height: 34px;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: color var(--transition), background var(--transition);
+}
+.admin-signout-btn:hover { color: var(--red); background: rgba(192,57,43,0.06); }
+
 /* ── Theme toggle button ── */
 .theme-toggle {
   width: 36px;
@@ -1241,9 +1321,22 @@ html.dark .cv-bubble { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 html.dark .cv-modal { background: var(--panel-muted); }
 html.dark .cv-modal-overlay { background: rgba(0,0,0,0.65); }
 
-/* KPI cards */
-html.dark .kpi-card-warn { background: #1e1500; border-color: #3d2e00; }
+/* KPI e relatório */
+html.dark .kpi-card-warn  { background: #1e1500; border-color: #3d2e00; }
 html.dark .kpi-card-brand { background: var(--brand-soft); border-color: rgba(17,181,133,0.25); }
+html.dark .report-bars    { background: var(--panel-muted); }
+html.dark .report-day-track { background: var(--panel-muted); }
+html.dark .report-header  { border-bottom-color: var(--line); }
+html.dark .qual-summary {
+  background: linear-gradient(135deg, var(--brand-soft), rgba(76,140,243,0.04));
+  border-color: rgba(17,181,133,0.2);
+}
+html.dark .qual-tone { background: var(--brand-soft); }
+
+/* Admin user chip */
+html.dark .admin-user-chip { background: var(--panel-muted); border-color: var(--line); }
+html.dark .admin-signout-btn { border-left-color: var(--line); }
+html.dark .admin-signout-btn:hover { background: rgba(255,119,114,0.08); }
 
 /* Login */
 html.dark .login-input { background: var(--panel-muted); border-color: var(--line); color: var(--text); }

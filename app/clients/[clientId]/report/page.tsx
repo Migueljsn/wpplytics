@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
-import { MessageSquare, Hash, TrendingUp, Clock, AlertCircle, BarChart2, Printer, ChevronLeft } from 'lucide-react';
+import { MessageSquare, Hash, TrendingUp, Clock, AlertCircle, BarChart2, ChevronLeft, Printer } from 'lucide-react';
 import { getDashboardClient, getQuantitativeReport } from '@/lib/dashboard';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 import { PrintButton } from './print-button';
 
 type Props = {
@@ -46,17 +47,29 @@ export default async function ReportPage({ params, searchParams }: Props) {
 
   return (
     <div className="report-shell">
+
+      {/* Nav bar */}
+      <nav className="report-nav no-print">
+        <a href={`/clients/${client.slug}`} className="report-nav-back">
+          <ChevronLeft size={16} /> Voltar ao dashboard
+        </a>
+        <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
+        <div className="report-nav-controls">
+          <ThemeToggle />
+          <PrintButton />
+        </div>
+      </nav>
+
       <div className="report-doc">
 
         <header className="report-header">
           <div className="report-title-block">
-            <p className="kicker">WPPlytics · Relatório Quantitativo</p>
+            <p className="kicker">Relatório Quantitativo</p>
             <h1>{client.name}</h1>
             <p className="report-meta">
               {label} &nbsp;·&nbsp; Gerado em {generatedAt} &nbsp;·&nbsp; {instance.label}
             </p>
           </div>
-          <PrintButton />
         </header>
 
         <section className="report-kpis">

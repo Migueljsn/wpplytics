@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
+import { ChevronLeft } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 import { PrintButton } from '../../report/print-button';
 
 type Props = {
@@ -57,7 +59,7 @@ export default async function QualitativeReportPage({ params }: Props) {
     return (
       <div className="report-shell">
         <div className="report-doc" style={{ alignItems: 'center', padding: '80px 48px' }}>
-          <p className="kicker" style={{ color: '#b5760b' }}>Erro</p>
+          <p className="kicker" style={{ color: 'var(--warn)' }}>Erro</p>
           <h1 style={{ fontSize: '1.6rem', margin: '8px 0' }}>Falha na geração</h1>
           <p className="muted">{run.errorMessage ?? 'Erro desconhecido.'}</p>
         </div>
@@ -72,18 +74,30 @@ export default async function QualitativeReportPage({ params }: Props) {
 
   return (
     <div className="report-shell">
+
+      {/* Nav bar */}
+      <nav className="report-nav no-print">
+        <a href={`/clients/${run.client.slug ?? run.client.id}`} className="report-nav-back">
+          <ChevronLeft size={16} /> Voltar ao dashboard
+        </a>
+        <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
+        <div className="report-nav-controls">
+          <ThemeToggle />
+          <PrintButton />
+        </div>
+      </nav>
+
       <div className="report-doc">
 
         <header className="report-header">
           <div className="report-title-block">
-            <p className="kicker">WPPlytics · Relatório Qualitativo</p>
+            <p className="kicker">Relatório Qualitativo</p>
             <h1>{run.client.name}</h1>
             <p className="report-meta">
               {periodFrom} &nbsp;·&nbsp; {data.conversationsAnalyzed ?? '—'} conversas analisadas
               &nbsp;·&nbsp; {run.instance?.label}
             </p>
           </div>
-          <PrintButton />
         </header>
 
         {data.summary && (

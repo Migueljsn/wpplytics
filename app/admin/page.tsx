@@ -26,15 +26,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </p>
           <h1 className="admin-title">Painel de Administração</h1>
         </div>
-        <form action={async () => {
-          'use server';
-          await signOut({ redirectTo: '/login' });
-        }}>
-          <button type="submit" className="action-button secondary admin-signout" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <LogOut size={14} /> Sair
-          </button>
-        </form>
-        <ThemeToggle />
+        <div className="admin-header-controls">
+          <ThemeToggle />
+          <div className="admin-user-chip">
+            <div className="admin-user-avatar">AD</div>
+            <span className="admin-user-label">Admin</span>
+            <form action={async () => {
+              'use server';
+              await signOut({ redirectTo: '/login' });
+            }}>
+              <button type="submit" className="admin-signout-btn" title="Sair da conta">
+                <LogOut size={13} /> Sair
+              </button>
+            </form>
+          </div>
+        </div>
       </header>
 
       {error && <div className="admin-alert admin-alert-error">{decodeURIComponent(error)}</div>}
