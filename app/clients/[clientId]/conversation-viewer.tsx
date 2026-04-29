@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn } from 'lucide-react';
+import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn, Search } from 'lucide-react';
 import type { ChatConversation, ChatMessage } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -51,6 +51,18 @@ function formatDuration(secs?: number | null) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function makeSnippet(text: string, query: string) {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return { before: text.slice(0, 60), match: '', after: '' };
+  const start = Math.max(0, idx - 20);
+  const end = Math.min(text.length, idx + query.length + 30);
+  return {
+    before: (start > 0 ? '…' : '') + text.slice(start, idx),
+    match: text.slice(idx, idx + query.length),
+    after: text.slice(idx + query.length, end) + (end < text.length ? '…' : ''),
+  };
 }
 
 function ImageBubble({ msg }: { msg: ChatMessage }) {
@@ -185,7 +197,7 @@ function renderMessages(messages: ChatMessage[]) {
     }
     const isMedia = msg.messageType !== 'text' && msg.messageType !== 'unknown';
     nodes.push(
-      <div key={msg.id} className={`cv-bubble ${msg.fromMe ? 'cv-bubble-out' : 'cv-bubble-in'}`}>
+      <div key={msg.id} id={`msg-${msg.id}`} className={`cv-bubble ${msg.fromMe ? 'cv-bubble-out' : 'cv-bubble-in'}`}>
         {msg.textContent ? (
           <p>{msg.textContent}</p>
         ) : isMedia ? (
@@ -209,11 +221,30 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const [secondsAgo, setSecondsAgo] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
   const visible = conversations.filter((c) => visibleIds.has(c.id));
   const selected = visible.find((c) => c.id === selectedId) ?? null;
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return null;
+    const contacts = visible.filter(
+      (c) => c.contactName.toLowerCase().includes(q) || c.remoteJid.toLowerCase().includes(q),
+    );
+    const messages: { conv: ChatConversation; msg: ChatMessage }[] = [];
+    for (const conv of visible) {
+      for (const msg of conv.messages) {
+        if (msg.textContent?.toLowerCase().includes(q)) {
+          messages.push({ conv, msg });
+        }
+      }
+    }
+    return { contacts, messages };
+  }, [searchQuery, visible]);
 
   useEffect(() => {
     setVisibleIds(new Set(conversations.map((c) => c.id)));
@@ -250,6 +281,19 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     }, 1000);
     return () => clearInterval(tick);
   }, [lastUpdated]);
+
+  useEffect(() => {
+    if (!highlightMsgId) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`msg-${highlightMsgId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('cv-bubble-highlight');
+      }
+      setHighlightMsgId(null);
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [highlightMsgId, selectedId]);
 
   async function confirmDelete() {
     if (!confirmId) return;
@@ -305,45 +349,115 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
             </span>
           </div>
         </div>
+        <div className="cv-search-bar">
+          <Search size={13} className="cv-search-icon" />
+          <input
+            type="text"
+            className="cv-search-input"
+            placeholder="Buscar conversa ou mensagem…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="cv-search-clear" onClick={() => setSearchQuery('')} aria-label="Limpar busca">
+              <X size={12} />
+            </button>
+          )}
+        </div>
         <div className="cv-list-scroll">
-          {visible.map((conv) => {
-            const lastMsg = conv.messages[conv.messages.length - 1];
-            const isDeleting = deletingId === conv.id;
-            return (
-              <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
-                <button
-                  className={`cv-row${conv.id === selectedId ? ' cv-row-active' : ''}`}
-                  onClick={() => setSelectedId(conv.id)}
-                >
-                  <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
-                  <div className="cv-row-body">
-                    <div className="cv-row-head">
-                      <span className="cv-row-name">{conv.contactName}</span>
-                      <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+          {searchResults ? (
+            searchResults.contacts.length === 0 && searchResults.messages.length === 0 ? (
+              <div className="cv-search-empty">Nenhum resultado para &ldquo;{searchQuery}&rdquo;</div>
+            ) : (
+              <>
+                {searchResults.contacts.length > 0 && (
+                  <>
+                    <div className="cv-search-section">Contatos · {searchResults.contacts.length}</div>
+                    {searchResults.contacts.map((conv) => (
+                      <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                        <button className="cv-row" onClick={() => setSelectedId(conv.id)}>
+                          <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                          <div className="cv-row-body">
+                            <div className="cv-row-head">
+                              <span className="cv-row-name">{conv.contactName}</span>
+                              <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+                            </div>
+                            <p className="cv-row-preview">{conv.remoteJid.split('@')[0]}</p>
+                          </div>
+                        </button>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {searchResults.messages.length > 0 && (
+                  <>
+                    <div className="cv-search-section">Mensagens · {searchResults.messages.length}</div>
+                    {searchResults.messages.map(({ conv, msg }) => {
+                      const s = makeSnippet(msg.textContent ?? '', searchQuery);
+                      return (
+                        <div key={msg.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                          <button
+                            className="cv-row"
+                            onClick={() => { setSelectedId(conv.id); setHighlightMsgId(msg.id); }}
+                          >
+                            <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                            <div className="cv-row-body">
+                              <div className="cv-row-head">
+                                <span className="cv-row-name">{conv.contactName}</span>
+                                <span className="cv-row-time">{formatTime(msg.sentAt)}</span>
+                              </div>
+                              <p className="cv-search-snippet">
+                                {s.before}<mark className="cv-search-mark">{s.match}</mark>{s.after}
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </>
+            )
+          ) : (
+            visible.map((conv) => {
+              const lastMsg = conv.messages[conv.messages.length - 1];
+              const isDeleting = deletingId === conv.id;
+              return (
+                <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                  <button
+                    className={`cv-row${conv.id === selectedId ? ' cv-row-active' : ''}`}
+                    onClick={() => setSelectedId(conv.id)}
+                  >
+                    <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                    <div className="cv-row-body">
+                      <div className="cv-row-head">
+                        <span className="cv-row-name">{conv.contactName}</span>
+                        <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+                      </div>
+                      <p className="cv-row-preview">
+                        {lastMsg?.fromMe && <span className="cv-me">Você: </span>}
+                        {lastMsg?.textContent || '📎 mídia'}
+                      </p>
+                      <div className="cv-row-meta">
+                        <span>{conv.messageCount} msgs</span>
+                        {conv.firstResponseTimeSecs != null && (
+                          <span>TMP {Math.round(conv.firstResponseTimeSecs / 60)}min</span>
+                        )}
+                      </div>
                     </div>
-                    <p className="cv-row-preview">
-                      {lastMsg?.fromMe && <span className="cv-me">Você: </span>}
-                      {lastMsg?.textContent || '📎 mídia'}
-                    </p>
-                    <div className="cv-row-meta">
-                      <span>{conv.messageCount} msgs</span>
-                      {conv.firstResponseTimeSecs != null && (
-                        <span>TMP {Math.round(conv.firstResponseTimeSecs / 60)}min</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-                <button
-                  className="cv-delete-btn"
-                  title="Ocultar conversa"
-                  disabled={isDeleting}
-                  onClick={(e) => { e.stopPropagation(); setConfirmId(conv.id); }}
-                >
-                  {isDeleting ? <RefreshCw size={12} className="spin-icon" /> : <X size={14} />}
-                </button>
-              </div>
-            );
-          })}
+                  </button>
+                  <button
+                    className="cv-delete-btn"
+                    title="Ocultar conversa"
+                    disabled={isDeleting}
+                    onClick={(e) => { e.stopPropagation(); setConfirmId(conv.id); }}
+                  >
+                    {isDeleting ? <RefreshCw size={12} className="spin-icon" /> : <X size={14} />}
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

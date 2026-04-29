@@ -452,6 +452,77 @@ button { font: inherit; }
 
 .cv-list-scroll { flex: 1; overflow-y: auto; }
 
+/* Search bar */
+.cv-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  background: var(--panel-muted);
+}
+.cv-search-icon { color: var(--muted); flex-shrink: 0; }
+.cv-search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.82rem;
+  color: var(--text);
+  font-family: inherit;
+  min-width: 0;
+}
+.cv-search-input::placeholder { color: var(--muted); }
+.cv-search-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.cv-search-clear:hover { color: var(--text); background: var(--line); }
+.cv-search-section {
+  padding: 8px 14px 5px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.cv-search-snippet {
+  margin: 0;
+  font-size: 0.79rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cv-search-mark {
+  background: rgba(15, 157, 117, 0.18);
+  color: var(--brand);
+  border-radius: 2px;
+  font-weight: 600;
+}
+.cv-search-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+@keyframes msgHighlight {
+  0%   { box-shadow: 0 0 0 3px rgba(15, 157, 117, 0.55); }
+  60%  { box-shadow: 0 0 0 3px rgba(15, 157, 117, 0.2); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.cv-bubble-highlight { animation: msgHighlight 2s ease-out forwards; }
+
 /* Row wrapper for delete button */
 .cv-row-wrap {
   position: relative;
@@ -1699,6 +1770,9 @@ html.dark .cv-row-name { color: var(--text); }
 html.dark .cv-row-preview { color: var(--muted); }
 html.dark .cv-delete-btn { color: var(--muted); }
 html.dark .cv-delete-btn:hover { background: rgba(255,119,114,0.15); color: var(--red); border-color: rgba(255,119,114,0.3); }
+html.dark .cv-search-bar { background: var(--panel); border-bottom-color: var(--line); }
+html.dark .cv-search-input { color: var(--text); }
+html.dark .cv-search-mark { background: rgba(17, 181, 133, 0.22); }
 
 /* Chat área */
 html.dark .cv-chat { background: var(--panel); }
