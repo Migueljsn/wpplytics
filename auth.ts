@@ -14,13 +14,11 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
-    role?: string;
-    clientId?: string | null;
-    clientSlug?: string | null;
-  }
-}
+type ExtendedToken = {
+  role?: string;
+  clientId?: string | null;
+  clientSlug?: string | null;
+};
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -63,9 +61,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      session.user.role = token.role ?? 'ADMIN';
-      session.user.clientId = token.clientId;
-      session.user.clientSlug = token.clientSlug;
+      const t = token as typeof token & ExtendedToken;
+      session.user.role = t.role ?? 'ADMIN';
+      session.user.clientId = t.clientId;
+      session.user.clientSlug = t.clientSlug;
       return session;
     },
   },
