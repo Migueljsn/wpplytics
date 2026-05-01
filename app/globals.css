@@ -2148,6 +2148,106 @@ html.dark .admin-danger-card { border-color: rgba(255,119,114,0.4) !important; b
   .kpi-card, .qual-item, .report-bar-fill, .report-day-fill { animation: none; }
 }
 
+/* ── Admin stats bar ── */
+.admin-stat-bar {
+  display: flex;
+  gap: 12px;
+  padding: 0 32px 20px;
+  flex-wrap: wrap;
+}
+.admin-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  flex: 1;
+  min-width: 140px;
+  backdrop-filter: blur(8px);
+}
+.admin-stat-icon { opacity: 0.55; flex-shrink: 0; }
+.admin-stat-value { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.admin-stat-total { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+.admin-stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+/* Admin client row details */
+.admin-user-email {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.admin-user-email-missing { color: var(--warn); font-style: italic; }
+.admin-last-activity { font-size: 0.74rem; color: var(--muted); opacity: 0.75; }
+.admin-inst-delete-btn {
+  color: var(--muted);
+  opacity: 0.4;
+  transition: opacity var(--transition), color var(--transition);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+.admin-inst-delete-btn:hover { opacity: 1; color: var(--red); }
+
+/* Admin form helpers */
+.admin-field-group-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-badge-warn {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(181,118,11,0.12);
+  color: var(--warn);
+  border-radius: 99px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Admin back bar (shown on client pages when admin is viewing) */
+.admin-back-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 157, 117, 0.92);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(15, 157, 117, 0.25);
+}
+.admin-back-bar a {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
+  transition: opacity var(--transition);
+}
+.admin-back-bar a:hover { opacity: 1; }
+.admin-back-bar-sep { opacity: 0.4; }
+.admin-back-bar-label { opacity: 0.8; font-weight: 400; }
+
+/* Dark mode admin additions */
+html.dark .admin-stat-item { background: rgba(19,25,32,0.7); }
+
 /* ── Responsive ── */
 @media (max-width: 1100px) {
   .dashboard-shell {

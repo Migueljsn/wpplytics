@@ -6,7 +6,8 @@ import { getDashboardClient, getInstanceConversations, getReportPreviews } from 
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
 import { GenerateQualitativeButton } from './generate-qualitative-button';
-import { signOut } from '@/auth';
+import { signOut, auth } from '@/auth';
+import { ArrowLeft } from 'lucide-react';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
@@ -37,25 +38,39 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
   const { period } = await searchParams;
   const { from, to } = parsePeriod(period);
 
-  const client = await getDashboardClient(clientId);
+  const [client, session] = await Promise.all([
+    getDashboardClient(clientId),
+    auth(),
+  ]);
   if (!client) notFound();
+
+  const isAdminViewing = session?.user?.role === 'ADMIN';
 
   const selectedInstance = client.instances[0];
 
   if (!selectedInstance) {
     return (
-      <main className="dashboard-shell">
-        <aside className="sidebar">
-          <div className="brand-block">
-            <p className="kicker">WPPlytics</p>
-            <h1>{client.name}</h1>
+      <>
+        {isAdminViewing && (
+          <div className="admin-back-bar">
+            <a href="/admin"><ArrowLeft size={14} /> Voltar ao Admin</a>
+            <span className="admin-back-bar-sep">|</span>
+            <span className="admin-back-bar-label">Visualizando: {client.name}</span>
           </div>
-          <section className="sidebar-card">
-            <h2>Sem instâncias</h2>
-            <p className="muted">Nenhuma instância WhatsApp configurada.</p>
-          </section>
-        </aside>
-      </main>
+        )}
+        <main className="dashboard-shell">
+          <aside className="sidebar">
+            <div className="brand-block">
+              <p className="kicker">WPPlytics</p>
+              <h1>{client.name}</h1>
+            </div>
+            <section className="sidebar-card">
+              <h2>Sem instâncias</h2>
+              <p className="muted">Nenhuma instância WhatsApp configurada.</p>
+            </section>
+          </aside>
+        </main>
+      </>
     );
   }
 
@@ -70,6 +85,14 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
   const reportHref = `/clients/${client.slug}/report?period=${activePeriod}`;
 
   return (
+    <>
+      {isAdminViewing && (
+        <div className="admin-back-bar">
+          <a href="/admin"><ArrowLeft size={14} /> Voltar ao Admin</a>
+          <span className="admin-back-bar-sep">|</span>
+          <span className="admin-back-bar-label">Visualizando: {client.name}</span>
+        </div>
+      )}
     <main className="dashboard-shell">
       <aside className="sidebar">
         <div className="brand-block">
@@ -77,9 +100,11 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
             <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle />
-              <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <ShieldCheck size={13} /> Admin
-              </a>
+              {isAdminViewing && (
+                <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ShieldCheck size={13} /> Admin
+                </a>
+              )}
               <form action={async () => {
                 'use server';
                 await signOut({ redirectTo: '/login' });
@@ -198,6 +223,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         <ConversationViewer conversations={conversations} />
       </section>
     </main>
+    </>
   );
 }
 
