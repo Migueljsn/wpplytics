@@ -1807,6 +1807,22 @@ html.dark .report-alert-warn {
   pointer-events: none;
 }
 .login-input-padded { padding-left: 38px; width: 100%; }
+.login-input-padded-right { padding-right: 40px; }
+.login-eye-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: color var(--transition);
+}
+.login-eye-btn:hover { color: var(--text); }
 
 /* Spin utility */
 .spin-icon { animation: spin 0.8s linear infinite; }

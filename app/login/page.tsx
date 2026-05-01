@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
-import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
+import { useActionState, useState } from 'react';
+import { Mail, Lock, LogIn, Loader2, Eye, EyeOff } from 'lucide-react';
 import { ThemeToggle } from '@/app/components/theme-toggle';
 import { loginAction } from './actions';
 
 export default function LoginPage() {
   const [error, action, pending] = useActionState(loginAction, null);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <main className="login-shell">
@@ -45,12 +46,21 @@ export default function LoginPage() {
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
                 placeholder="••••••••"
-                className="login-input login-input-padded"
+                className="login-input login-input-padded login-input-padded-right"
               />
+              <button
+                type="button"
+                className="login-eye-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
           </div>
 
