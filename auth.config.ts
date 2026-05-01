@@ -20,7 +20,11 @@ export const authConfig: NextAuthConfig = {
         if (role === 'CLIENT' && clientSlug) {
           return Response.redirect(new URL(`/clients/${clientSlug}`, nextUrl));
         }
-        return Response.redirect(new URL('/admin', nextUrl));
+        if (role === 'ADMIN') {
+          return Response.redirect(new URL('/admin', nextUrl));
+        }
+        // Session without role (old token) — show login form so user can re-authenticate
+        return true;
       }
 
       // Admin area → ADMIN only
