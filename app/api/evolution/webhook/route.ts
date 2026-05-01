@@ -108,9 +108,9 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
         continue;
       }
 
-      // Upsert conversation
+      // Upsert conversation — ignore hidden ones so new messages open a fresh conversation
       const conv = await prisma.conversation.findFirst({
-        where: { instanceId: waInstance.id, remoteJid },
+        where: { instanceId: waInstance.id, remoteJid, hidden: false },
         orderBy: { startedAt: 'desc' },
       });
 

@@ -20,6 +20,8 @@ export const mockConversations: ChatConversation[] = [
     inboundCount: 3,
     outboundCount: 3,
     firstResponseTimeSecs: 520,
+    messagesTruncated: false,
+    aiSummary: null,
     messages: [
       {
         id: 'm1',
@@ -76,6 +78,8 @@ export const mockConversations: ChatConversation[] = [
     inboundCount: 3,
     outboundCount: 2,
     firstResponseTimeSecs: 4320,
+    messagesTruncated: false,
+    aiSummary: null,
     messages: [
       {
         id: 'm7',

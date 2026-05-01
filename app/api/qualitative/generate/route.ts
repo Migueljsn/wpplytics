@@ -38,17 +38,62 @@ function buildConversationText(
   return { text, conversationsCount: conversations.length, messagesCount };
 }
 
-const SYSTEM_PROMPT = `Você é um analista especialista em atendimento comercial via WhatsApp.
-Analise as conversas abaixo e retorne um JSON com os seguintes campos:
-- summary: resumo executivo do período em 2-3 frases diretas
-- tone: avaliação do tom geral das conversas (ex: "Informal e receptivo, mas com demora nas respostas")
-- objections: lista das principais objeções dos clientes (máx 8 itens, strings curtas e específicas)
-- opportunities: oportunidades de melhoria ou conversão identificadas (máx 8 itens)
-- patterns: padrões de comportamento ou perguntas recorrentes (máx 8 itens)
-- recommendations: recomendações práticas e concretas para melhorar o atendimento (máx 6 itens)
+const SYSTEM_PROMPT = `Você é um consultor especialista em atendimento comercial via WhatsApp, com experiência em análise de conversas para negócios de serviços.
 
-Seja específico, prático e baseado nos dados. Responda sempre em português brasileiro.
-Retorne SOMENTE o JSON, sem markdown.`;
+Analise as conversas fornecidas e retorne um JSON estritamente estruturado conforme abaixo. Seja específico, cite exemplos reais das conversas (nome + número quando disponível), e baseie cada conclusão em evidências concretas dos dados.
+
+JSON obrigatório:
+{
+  "mainDiscovery": {
+    "insight": "A principal descoberta ou problema crítico do período em 1-2 frases impactantes e diretas",
+    "urgency": "alta" | "média" | "baixa",
+    "impactEstimate": "Estimativa do impacto em conversão, retenção ou satisfação. Ex: '25-30% de melhora potencial em conversão'",
+    "relatedMetric": "Métrica relacionada à descoberta. Ex: 'TMP médio', 'Taxa de resposta', 'Retenção de clientes'"
+  },
+  "winningPatterns": [
+    {
+      "name": "Nome curto e descritivo do padrão que funciona bem",
+      "effectiveness": "alta" | "média" | "baixa",
+      "description": "Descrição detalhada de como esse padrão aparece nas conversas e por que é eficaz para o negócio",
+      "examples": ["Nome do Contato - número completo"]
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Título claro da oportunidade de melhoria identificada",
+      "examples": ["Nome do Contato - número completo"],
+      "recommendedSolution": "Solução prática e concreta que pode ser implementada imediatamente no atendimento"
+    }
+  ],
+  "objections": [
+    {
+      "type": "Categoria da objeção (ex: Preço, Agenda, Indecisão, Concorrente)",
+      "count": 0,
+      "description": "Como essa objeção aparece nas conversas e como está sendo tratada atualmente pela equipe",
+      "severity": "alta" | "média" | "baixa"
+    }
+  ],
+  "antiObjectionScripts": [
+    {
+      "objection": "Tipo da objeção (mesmo nome do campo type acima)",
+      "strategy": "Estratégia recomendada em uma frase clara",
+      "templateResponse": "Template de resposta pronto para usar no WhatsApp, entre aspas duplas, personalizado para o contexto real do negócio identificado nas conversas",
+      "expectedOutcome": "Resultado esperado ao usar esse script com os clientes"
+    }
+  ],
+  "tone": "Avaliação do tom geral das conversas em 1-2 frases: formalidade, receptividade, velocidade de resposta, calor humano",
+  "summary": "Resumo executivo do período em 3-4 frases diretas destacando os achados mais críticos e o estado geral do atendimento"
+}
+
+Regras obrigatórias:
+- Retorne SOMENTE o JSON, sem markdown, sem texto fora do JSON
+- winningPatterns: 1 a 4 itens (pelo menos 1 sempre)
+- opportunities: 1 a 4 itens
+- objections: 1 a 6 itens, com "count" real baseado nas conversas analisadas
+- antiObjectionScripts: apenas para objeções com severity "alta" ou "média"; pode ser array vazio
+- examples: use nomes e números reais das conversas; se não houver número visível, use só o nome
+- Responda sempre em português brasileiro
+- Se dados insuficientes para um campo, use array vazio [] ou string descritiva`;
 
 export async function POST(request: NextRequest) {
   let body: RequestBody;
@@ -67,7 +112,6 @@ export async function POST(request: NextRequest) {
   const toDate = new Date(to);
   const dateFilter = fromDate ? { gte: fromDate, lte: toDate } : undefined;
 
-  // Create AnalysisRun record
   const run = await prisma.analysisRun.create({
     data: {
       clientId,
@@ -81,7 +125,6 @@ export async function POST(request: NextRequest) {
   });
 
   try {
-    // Fetch conversations + messages
     const conversations = await prisma.conversation.findMany({
       where: { instanceId, ...(dateFilter ? { startedAt: dateFilter } : {}) },
       orderBy: { startedAt: 'desc' },
@@ -117,7 +160,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'no_text_messages' }, { status: 422 });
     }
 
-    const userMessage = `Período: ${fromDate ? fromDate.toLocaleDateString('pt-BR') : 'todo o histórico'} até ${toDate.toLocaleDateString('pt-BR')}\nTotal de conversas: ${conversationsCount}\n\nCONVERSAS:\n${text}`;
+    const userMessage = `Período: ${fromDate ? fromDate.toLocaleDateString('pt-BR') : 'todo o histórico'} até ${toDate.toLocaleDateString('pt-BR')}\nTotal de conversas na amostra: ${conversationsCount}\n\nCONVERSAS:\n${text}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -126,8 +169,8 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ],
-      max_tokens: 1500,
-      temperature: 0.4,
+      max_tokens: 3000,
+      temperature: 0.35,
     });
 
     const rawJson = completion.choices[0]?.message?.content ?? '{}';

@@ -56,7 +56,7 @@ export async function getInstanceConversations(
 ): Promise<ChatConversation[]> {
   const dateFilter = from ? { gte: from, lte: to } : undefined;
   const conversations = await prisma.conversation.findMany({
-    where: { instanceId, hidden: false, ...(dateFilter ? { startedAt: dateFilter } : {}) },
+    where: { instanceId, hidden: false, ...(dateFilter ? { endedAt: dateFilter } : {}) },
     orderBy: { endedAt: 'desc' },
     take: 50,
     include: { contact: true },
@@ -65,9 +65,13 @@ export async function getInstanceConversations(
   return Promise.all(
     conversations.map(async (conv) => {
       const messages = await prisma.message.findMany({
-        where: { instanceId, remoteJid: conv.remoteJid },
-        orderBy: { sentAt: 'asc' },
-        take: 200,
+        where: {
+          instanceId,
+          remoteJid: conv.remoteJid,
+          sentAt: { gte: conv.startedAt, lte: conv.endedAt },
+        },
+        orderBy: { sentAt: 'desc' },
+        take: 500,
       });
 
       return {
@@ -80,11 +84,16 @@ export async function getInstanceConversations(
         inboundCount: conv.inboundCount,
         outboundCount: conv.outboundCount,
         firstResponseTimeSecs: conv.firstResponseTimeSecs,
-        messages: messages.map((msg) => ({
+        messagesTruncated: messages.length === 500,
+        aiSummary: (() => {
+          if (!conv.summary) return null;
+          try { return JSON.parse(conv.summary) as import('@/lib/types').ConversationSummary; } catch { return null; }
+        })(),
+        messages: messages.reverse().map((msg) => ({
           id: msg.id,
           fromMe: msg.fromMe,
           sentAt: msg.sentAt.toISOString(),
-          textContent: msg.textContent ?? '',
+          textContent: msg.textContent,
           messageType: normalizeMessageType(msg.messageType),
           mediaCaption: msg.mediaCaption,
           mediaFileName: msg.mediaFileName,

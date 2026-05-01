@@ -2,13 +2,20 @@ export type ChatMessage = {
   id: string;
   fromMe: boolean;
   sentAt: string;
-  textContent: string;
+  textContent: string | null;
   messageType: 'text' | 'audio' | 'image' | 'document' | 'video' | 'sticker' | 'unknown';
   mediaCaption?: string | null;
   mediaFileName?: string | null;
   mediaMimetype?: string | null;
   mediaDuration?: number | null;
   mediaSize?: number | null;
+};
+
+export type ConversationSummary = {
+  topic: string;
+  sentiment: 'positivo' | 'neutro' | 'negativo';
+  summary: string;
+  keyPoints: string[];
 };
 
 export type ChatConversation = {
@@ -22,6 +29,8 @@ export type ChatConversation = {
   outboundCount: number;
   firstResponseTimeSecs?: number | null;
   messages: ChatMessage[];
+  messagesTruncated: boolean;
+  aiSummary: ConversationSummary | null;
 };
 
 export type ReportAvailability = {

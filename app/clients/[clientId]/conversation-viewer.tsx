@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn, Search } from 'lucide-react';
-import type { ChatConversation, ChatMessage } from '@/lib/types';
+import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn, Search, BarChart2, Sparkles, CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
+import type { ChatConversation, ChatMessage, ConversationSummary } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -177,6 +177,111 @@ function MediaBubble({ msg }: { msg: ChatMessage }) {
   );
 }
 
+function formatSecs(secs: number): string {
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return s > 0 ? `${m}min ${s}s` : `${m}min`;
+  }
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+function ConversationMetrics({ conv }: { conv: ChatConversation }) {
+  const stats = useMemo(() => {
+    const startMs = new Date(conv.startedAt).getTime();
+    const endMs = new Date(conv.endedAt).getTime();
+    const durationMs = Math.max(0, endMs - startMs);
+    const durationSecs = Math.round(durationMs / 1000);
+    const durationHours = durationMs / 3600000;
+    const pace =
+      durationHours >= 0.05
+        ? Math.round((conv.messageCount / durationHours) * 10) / 10
+        : conv.messageCount;
+
+    let maxGapSecs = 0;
+    let lastInboundAt: number | null = null;
+    for (const msg of conv.messages) {
+      if (!msg.fromMe) {
+        lastInboundAt = new Date(msg.sentAt).getTime();
+      } else if (lastInboundAt !== null) {
+        const gap = Math.round((new Date(msg.sentAt).getTime() - lastInboundAt) / 1000);
+        if (gap > maxGapSecs) maxGapSecs = gap;
+        lastInboundAt = null;
+      }
+    }
+
+    const startDate = new Date(conv.startedAt);
+    const startDayLabel = startDate.toLocaleDateString('pt-BR', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+    });
+    const startHour = startDate.getHours();
+
+    return { durationSecs, pace, maxGapSecs, startDayLabel, startHour };
+  }, [conv]);
+
+  const items: { label: string; value: string }[] = [
+    { label: 'Duração', value: formatSecs(stats.durationSecs) },
+    { label: 'Recebidas', value: String(conv.inboundCount) },
+    { label: 'Enviadas', value: String(conv.outboundCount) },
+    ...(conv.firstResponseTimeSecs != null
+      ? [{ label: 'TMP', value: formatSecs(conv.firstResponseTimeSecs) }]
+      : []),
+    { label: 'Ritmo', value: `${stats.pace} msg/h` },
+    ...(stats.maxGapSecs > 60
+      ? [{ label: 'Maior intervalo', value: formatSecs(stats.maxGapSecs) }]
+      : []),
+    { label: 'Início', value: `${stats.startHour}h · ${stats.startDayLabel}` },
+  ];
+
+  return (
+    <div className="cv-metrics-panel">
+      <div className="cv-metrics-grid">
+        {items.map(({ label, value }) => (
+          <div key={label} className="cv-metric-item">
+            <span className="cv-metric-label">{label}</span>
+            <span className="cv-metric-value">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SentimentIcon({ sentiment }: { sentiment: ConversationSummary['sentiment'] }) {
+  if (sentiment === 'positivo') return <CheckCircle2 size={13} style={{ color: '#0f9d75' }} />;
+  if (sentiment === 'negativo') return <XCircle size={13} style={{ color: '#ef4444' }} />;
+  return <MinusCircle size={13} style={{ color: '#9ca3af' }} />;
+}
+
+function ConversationAISummary({ summary }: { summary: ConversationSummary }) {
+  const sentimentLabel = { positivo: 'Positivo', neutro: 'Neutro', negativo: 'Negativo' }[summary.sentiment];
+  const sentimentClass = `cv-summary-sentiment-${summary.sentiment}`;
+  return (
+    <div className="cv-ai-summary-panel">
+      <div className="cv-ai-summary-header">
+        <span className="cv-ai-summary-topic">{summary.topic}</span>
+        <span className={`cv-summary-sentiment ${sentimentClass}`}>
+          <SentimentIcon sentiment={summary.sentiment} />
+          {sentimentLabel}
+        </span>
+      </div>
+      <p className="cv-ai-summary-text">{summary.summary}</p>
+      {summary.keyPoints?.length > 0 && (
+        <ul className="cv-ai-summary-points">
+          {summary.keyPoints.map((pt, i) => (
+            <li key={i}>{pt}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function renderMessages(messages: ChatMessage[]) {
   if (messages.length === 0) {
     return <div className="cv-thread-empty">Sem mensagens nesta conversa.</div>;
@@ -223,6 +328,16 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
+  const [showMetrics, setShowMetrics] = useState(false);
+  const [showAISummary, setShowAISummary] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryMap, setSummaryMap] = useState<Record<string, ConversationSummary>>(() => {
+    const initial: Record<string, ConversationSummary> = {};
+    for (const c of conversations) {
+      if (c.aiSummary) initial[c.id] = c.aiSummary;
+    }
+    return initial;
+  });
   const threadRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
@@ -264,7 +379,19 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     if (threadRef.current && isAtBottomRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
-  }, [selectedId, conversations]);
+    setShowMetrics(false);
+    setShowAISummary(false);
+  }, [selectedId]);
+
+  useEffect(() => {
+    setSummaryMap((prev) => {
+      const next = { ...prev };
+      for (const c of conversations) {
+        if (c.aiSummary && !next[c.id]) next[c.id] = c.aiSummary;
+      }
+      return next;
+    });
+  }, [conversations]);
 
   useEffect(() => {
     const poll = setInterval(() => {
@@ -294,6 +421,20 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     }, 80);
     return () => clearTimeout(timer);
   }, [highlightMsgId, selectedId]);
+
+  async function generateSummary(convId: string) {
+    setSummaryLoading(true);
+    setShowAISummary(true);
+    try {
+      const res = await fetch(`/api/conversations/${convId}/summary`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json() as ConversationSummary;
+        setSummaryMap((prev) => ({ ...prev, [convId]: data }));
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
+  }
 
   async function confirmDelete() {
     if (!confirmId) return;
@@ -476,13 +617,49 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                   TMP {Math.round(selected.firstResponseTimeSecs / 60)}min
                 </span>
               )}
+              <button
+                className={`cv-chip-metrics${showMetrics ? ' cv-chip-metrics-active' : ''}`}
+                onClick={() => setShowMetrics((v) => !v)}
+                title="Ver métricas da conversa"
+              >
+                <BarChart2 size={11} /> Métricas
+              </button>
+              <button
+                className={`cv-chip-metrics${showAISummary ? ' cv-chip-metrics-active' : ''}`}
+                onClick={() => {
+                  if (summaryMap[selected.id]) {
+                    setShowAISummary((v) => !v);
+                  } else {
+                    void generateSummary(selected.id);
+                  }
+                }}
+                disabled={summaryLoading}
+                title="Gerar resumo com IA"
+              >
+                <Sparkles size={11} />
+                {summaryLoading ? 'Gerando…' : 'Resumo IA'}
+              </button>
               <span className="cv-chip-readonly" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Lock size={11} /> Somente leitura
               </span>
             </div>
           </div>
 
+          {showMetrics && <ConversationMetrics conv={selected} />}
+          {showAISummary && (
+            summaryLoading
+              ? <div className="cv-metrics-panel" style={{ color: 'var(--muted)', fontSize: '0.84rem' }}>Analisando conversa com IA…</div>
+              : summaryMap[selected.id]
+                ? <ConversationAISummary summary={summaryMap[selected.id]} />
+                : null
+          )}
+
           <div className="cv-thread" ref={threadRef}>
+            {selected.messagesTruncated && (
+              <div className="cv-truncation-notice">
+                Exibindo as últimas 500 mensagens desta conversa.
+              </div>
+            )}
             {renderMessages(selected.messages)}
           </div>
 
