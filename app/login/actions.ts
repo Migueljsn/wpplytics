@@ -2,6 +2,7 @@
 
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 
 export async function loginAction(
@@ -11,7 +12,7 @@ export async function loginAction(
   const email = (formData.get('email') as string).trim();
   const password = formData.get('password') as string;
 
-  // Determine redirect destination based on role (avoids double-redirect)
+  // Determine redirect destination based on role
   let redirectTo = '/admin';
   try {
     const user = await prisma.user.findUnique({
@@ -26,12 +27,15 @@ export async function loginAction(
   }
 
   try {
-    await signIn('credentials', { email, password, redirectTo });
+    // redirect: false → sets the session cookie and returns instead of throwing NEXT_REDIRECT
+    await signIn('credentials', { email, password, redirect: false });
   } catch (err) {
-    if ((err as { digest?: string }).digest?.startsWith('NEXT_REDIRECT')) throw err;
     if (err instanceof AuthError) return 'E-mail ou senha incorretos.';
     console.error('[login] unexpected error:', err);
     return 'Erro interno. Verifique as configurações do servidor.';
   }
-  return null;
+
+  // Explicit redirect after successful sign-in (propagates correctly with useActionState)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  redirect(redirectTo as any);
 }
