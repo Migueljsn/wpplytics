@@ -1,15 +1,10 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp } from 'lucide-react';
+import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp, ChevronLeft, LogIn } from 'lucide-react';
 import { ThemeToggle } from '@/app/components/theme-toggle';
-import {
-  getDashboardClient,
-  getInstanceConversations,
-  getReportPreviews,
-} from '@/lib/dashboard';
+import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
-import { CanalSelector } from './canal-selector';
 import { GenerateQualitativeButton } from './generate-qualitative-button';
 import { signOut } from '@/auth';
 
@@ -61,14 +56,20 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
     );
   }
 
-  const hasMultiple = client.instances.length > 1;
-  // Conversations are always per-canal — default to first instance
+  // Multiple instances and no canal selected → show channel picker
+  if (client.instances.length > 1 && !canal) {
+    return <ChannelPicker client={client} />;
+  }
+
+  // Single instance or canal selected → full dashboard
   const selectedInstance =
     (canal ? client.instances.find((i) => i.id === canal) : null) ?? client.instances[0];
 
+  const hasMultiple = client.instances.length > 1;
   const activePeriod = period ?? '30d';
   const reportHref = `/clients/${client.slug}/report?period=${activePeriod}&canal=${selectedInstance.id}`;
   const reportAllHref = `/clients/${client.slug}/report?period=${activePeriod}`;
+  const backHref = `/clients/${client.slug}`;
 
   const [conversations, previews] = await Promise.all([
     getInstanceConversations(selectedInstance.id, from, to),
@@ -99,9 +100,14 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
               </form>
             </div>
           </div>
+          {hasMultiple && (
+            <a href={backHref} className="channel-back-link">
+              <ChevronLeft size={13} /> {client.name}
+            </a>
+          )}
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Building2 size={20} style={{ opacity: 0.6, flexShrink: 0 }} />
-            {client.name}
+            {selectedInstance.label}
           </h1>
           {client.sector && <p>{client.sector}</p>}
         </div>
@@ -127,16 +133,16 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           <div className="action-stack">
             {canQuantitative ? (
               <a href={reportHref} className="action-button" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={15} /> Quantitativo — {selectedInstance.label}
+                <BarChart2 size={15} /> Gerar Quantitativo
               </a>
             ) : (
               <button disabled className="action-button" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={15} /> Quantitativo — {selectedInstance.label}
+                <BarChart2 size={15} /> Gerar Quantitativo
               </button>
             )}
             {hasMultiple && (
               <a href={reportAllHref} className="action-button secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={15} /> Quantitativo — Todos os canais
+                <BarChart2 size={15} /> Relatório Geral
               </a>
             )}
             <GenerateQualitativeButton
@@ -173,9 +179,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           </div>
           <div className="preview-block">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Sparkles size={13} /> Qualitativo</h3>
-            <p className="muted" style={{ margin: 0 }}>
-              Disponível após geração do relatório.
-            </p>
+            <p className="muted" style={{ margin: 0 }}>Disponível após geração do relatório.</p>
           </div>
         </section>
       </aside>
@@ -186,25 +190,76 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
             <p className="kicker">Histórico interno</p>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <MessageSquare size={18} style={{ opacity: 0.6 }} />
-              {selectedInstance.label}
+              Conversas e chat
             </h2>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {hasMultiple && (
-              <Suspense fallback={<div className="date-filter-skeleton" style={{ width: 180 }} />}>
-                <CanalSelector instances={client.instances} currentCanal={selectedInstance.id} />
-              </Suspense>
-            )}
-            <Suspense fallback={<div className="date-filter-skeleton" />}>
-              <DateFilter current={activePeriod} />
-            </Suspense>
-          </div>
+          <Suspense fallback={<div className="date-filter-skeleton" />}>
+            <DateFilter current={activePeriod} />
+          </Suspense>
         </header>
 
         <ConversationViewer conversations={conversations} />
       </section>
     </main>
   );
+}
+
+function ChannelPicker({ client }: { client: Awaited<ReturnType<typeof getDashboardClient>> & {} }) {
+  return (
+    <main className="channel-picker-shell">
+      <div style={{ position: 'fixed', top: 20, right: 20, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <ThemeToggle />
+        <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ShieldCheck size={13} /> Admin
+        </a>
+        <form action={async () => {
+          'use server';
+          await signOut({ redirectTo: '/login' });
+        }}>
+          <button type="submit" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <LogOut size={13} /> Sair
+          </button>
+        </form>
+      </div>
+
+      <div className="channel-picker-header">
+        <p className="kicker">WPPlytics</p>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Building2 size={28} style={{ opacity: 0.5 }} />
+          {client!.name}
+        </h1>
+        {client!.sector && <p className="muted">{client!.sector}</p>}
+        <p className="muted" style={{ marginTop: 4 }}>Selecione o canal para acessar</p>
+      </div>
+
+      <div className="channel-picker-grid">
+        {client!.instances.map((inst) => (
+          <a
+            key={inst.id}
+            href={`/clients/${client!.slug}?canal=${inst.id}`}
+            className="channel-card"
+          >
+            <div className="channel-card-header">
+              <div className="channel-card-avatar">{initials(inst.label)}</div>
+              <span className={`instance-status-dot status-${inst.status.toLowerCase()}`}>{inst.status}</span>
+            </div>
+            <h2 className="channel-card-name">{inst.label}</h2>
+            <dl className="channel-card-stats">
+              <div><dt>Conversas</dt><dd>{inst.conversationCount}</dd></div>
+              <div><dt>Mensagens</dt><dd>{inst.messageCount}</dd></div>
+            </dl>
+            <span className="channel-card-enter">
+              <LogIn size={15} /> Entrar
+            </span>
+          </a>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+function initials(name: string) {
+  return name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 }
 
 function formatDateTime(value: string | null) {
