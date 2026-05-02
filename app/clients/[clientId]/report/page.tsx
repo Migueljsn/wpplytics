@@ -3,13 +3,13 @@ import {
   MessageSquare, Hash, TrendingUp, Clock, AlertCircle, BarChart2,
   ChevronLeft, Zap, Target, Activity, CalendarDays, Info,
 } from 'lucide-react';
-import { getDashboardClient, getQuantitativeReport } from '@/lib/dashboard';
+import { getDashboardClient, getQuantitativeReport, getQuantitativeReportAggregate } from '@/lib/dashboard';
 import { ThemeToggle } from '@/app/components/theme-toggle';
 import { PrintButton } from './print-button';
 
 type Props = {
   params: Promise<{ clientId: string }>;
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; canal?: string }>;
 };
 
 function parsePeriod(period?: string): { from: Date | null; to: Date; label: string; days: number | null } {
@@ -39,16 +39,23 @@ function statusColor(avgMin: number | null, benchmarkMin: number): string {
 
 export default async function ReportPage({ params, searchParams }: Props) {
   const { clientId } = await params;
-  const { period } = await searchParams;
+  const { period, canal } = await searchParams;
 
   const client = await getDashboardClient(clientId);
   if (!client) notFound();
 
-  const instance = client.instances[0];
-  if (!instance) notFound();
+  if (client.instances.length === 0) notFound();
+
+  const hasMultiple = client.instances.length > 1;
+  const selectedInstance = canal ? client.instances.find((i) => i.id === canal) ?? null : null;
+  const isAggregate = hasMultiple && !selectedInstance;
+  const instanceLabel = isAggregate ? 'Visão Geral — Todos os Canais' : (selectedInstance?.label ?? client.instances[0].label);
+  const backHref = `/clients/${client.slug}${canal ? `?canal=${canal}` : ''}`;
 
   const { from, to, label, days } = parsePeriod(period);
-  const report = await getQuantitativeReport(instance.id, from, to);
+  const report = isAggregate
+    ? await getQuantitativeReportAggregate(client.instances.map((i) => i.id), from, to)
+    : await getQuantitativeReport((selectedInstance ?? client.instances[0]).id, from, to);
 
   const maxHour = Math.max(...report.byHour.map((h) => h.count), 1);
   const maxBucket = Math.max(...report.responseTimeBuckets.map(b => b.count), 1);
@@ -65,7 +72,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
 
       {/* Nav */}
       <nav className="report-nav no-print">
-        <a href={`/clients/${client.slug}`} className="report-nav-back">
+        <a href={backHref} className="report-nav-back">
           <ChevronLeft size={16} /> Voltar ao dashboard
         </a>
         <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
@@ -87,7 +94,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
               {fromStr ? <>{fromStr} a {toStr}</> : <>Todo o período</>}
               {days && <> &nbsp;·&nbsp; {days} dias</>}
             </p>
-            <p className="report-meta">Gerado em: {generatedAt} &nbsp;·&nbsp; {instance.label}</p>
+            <p className="report-meta">Gerado em: {generatedAt} &nbsp;·&nbsp; {instanceLabel}</p>
           </div>
         </header>
 
@@ -343,7 +350,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
         </section>
 
         <footer className="report-footer">
-          <p>WPPlytics &nbsp;·&nbsp; {client.name} &nbsp;·&nbsp; {instance.label} &nbsp;·&nbsp; {label}</p>
+          <p>WPPlytics &nbsp;·&nbsp; {client.name} &nbsp;·&nbsp; {instanceLabel} &nbsp;·&nbsp; {label}</p>
         </footer>
       </div>
     </div>

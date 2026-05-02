@@ -1,16 +1,21 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp, ChevronRight } from 'lucide-react';
+import { Wifi, BarChart2, Sparkles, Building2, LogOut, ShieldCheck, MessageSquare, Hash, Clock, TrendingUp } from 'lucide-react';
 import { ThemeToggle } from '@/app/components/theme-toggle';
-import { getDashboardClient, getInstanceConversations, getReportPreviews } from '@/lib/dashboard';
+import {
+  getDashboardClient,
+  getInstanceConversations,
+  getReportPreviews,
+} from '@/lib/dashboard';
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
+import { CanalSelector } from './canal-selector';
 import { GenerateQualitativeButton } from './generate-qualitative-button';
 import { signOut } from '@/auth';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; canal?: string }>;
 };
 
 function parsePeriod(period?: string): { from: Date | null; to: Date } {
@@ -26,7 +31,6 @@ function parsePeriod(period?: string): { from: Date | null; to: Date } {
     return { from, to };
   }
   if (period === 'all') return { from: null, to };
-  // Default: 30d
   const from = new Date(to);
   from.setDate(from.getDate() - 30);
   return { from, to };
@@ -34,30 +38,37 @@ function parsePeriod(period?: string): { from: Date | null; to: Date } {
 
 export default async function ClientPage({ params, searchParams }: ClientPageProps) {
   const { clientId } = await params;
-  const { period } = await searchParams;
+  const { period, canal } = await searchParams;
   const { from, to } = parsePeriod(period);
 
   const client = await getDashboardClient(clientId);
   if (!client) notFound();
 
-  const selectedInstance = client.instances[0];
-
-  if (!selectedInstance) {
+  if (client.instances.length === 0) {
     return (
       <main className="dashboard-shell">
-          <aside className="sidebar">
-            <div className="brand-block">
-              <p className="kicker">WPPlytics</p>
-              <h1>{client.name}</h1>
-            </div>
-            <section className="sidebar-card">
-              <h2>Sem instâncias</h2>
-              <p className="muted">Nenhuma instância WhatsApp configurada.</p>
-            </section>
-          </aside>
-        </main>
+        <aside className="sidebar">
+          <div className="brand-block">
+            <p className="kicker">WPPlytics</p>
+            <h1>{client.name}</h1>
+          </div>
+          <section className="sidebar-card">
+            <h2>Sem instâncias</h2>
+            <p className="muted">Nenhuma instância WhatsApp configurada.</p>
+          </section>
+        </aside>
+      </main>
     );
   }
+
+  const hasMultiple = client.instances.length > 1;
+  // Conversations are always per-canal — default to first instance
+  const selectedInstance =
+    (canal ? client.instances.find((i) => i.id === canal) : null) ?? client.instances[0];
+
+  const activePeriod = period ?? '30d';
+  const reportHref = `/clients/${client.slug}/report?period=${activePeriod}&canal=${selectedInstance.id}`;
+  const reportAllHref = `/clients/${client.slug}/report?period=${activePeriod}`;
 
   const [conversations, previews] = await Promise.all([
     getInstanceConversations(selectedInstance.id, from, to),
@@ -66,8 +77,6 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
 
   const canQuantitative = selectedInstance.conversationCount > 0;
   const canQualitative = selectedInstance.reportAvailability.minimumDaysMet;
-  const activePeriod = period ?? '30d';
-  const reportHref = `/clients/${client.slug}/report?period=${activePeriod}`;
 
   return (
     <main className="dashboard-shell">
@@ -101,30 +110,12 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wifi size={15} /> Instância conectada</h2>
           <div className="instance-badge">{selectedInstance.label}</div>
           <dl className="metric-list">
-            <div>
-              <dt>Status</dt>
-              <dd>{selectedInstance.status}</dd>
-            </div>
-            <div>
-              <dt>Conectada em</dt>
-              <dd>{formatDateTime(selectedInstance.connectedAt)}</dd>
-            </div>
-            <div>
-              <dt>Primeira mensagem</dt>
-              <dd>{formatDateTime(selectedInstance.firstMessageAt)}</dd>
-            </div>
-            <div>
-              <dt>Dias acumulados</dt>
-              <dd>{selectedInstance.reportAvailability.collectedDays} dias</dd>
-            </div>
-            <div>
-              <dt>Conversas</dt>
-              <dd>{selectedInstance.conversationCount}</dd>
-            </div>
-            <div>
-              <dt>Mensagens</dt>
-              <dd>{selectedInstance.messageCount}</dd>
-            </div>
+            <div><dt>Status</dt><dd>{selectedInstance.status}</dd></div>
+            <div><dt>Conectada em</dt><dd>{formatDateTime(selectedInstance.connectedAt)}</dd></div>
+            <div><dt>Primeira mensagem</dt><dd>{formatDateTime(selectedInstance.firstMessageAt)}</dd></div>
+            <div><dt>Dias acumulados</dt><dd>{selectedInstance.reportAvailability.collectedDays} dias</dd></div>
+            <div><dt>Conversas</dt><dd>{selectedInstance.conversationCount}</dd></div>
+            <div><dt>Mensagens</dt><dd>{selectedInstance.messageCount}</dd></div>
           </dl>
         </section>
 
@@ -136,12 +127,17 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           <div className="action-stack">
             {canQuantitative ? (
               <a href={reportHref} className="action-button" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={15} /> Gerar Quantitativo
+                <BarChart2 size={15} /> Quantitativo — {selectedInstance.label}
               </a>
             ) : (
               <button disabled className="action-button" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={15} /> Gerar Quantitativo
+                <BarChart2 size={15} /> Quantitativo — {selectedInstance.label}
               </button>
+            )}
+            {hasMultiple && (
+              <a href={reportAllHref} className="action-button secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BarChart2 size={15} /> Quantitativo — Todos os canais
+              </a>
             )}
             <GenerateQualitativeButton
               clientId={client.id}
@@ -188,11 +184,21 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
         <header className="content-header">
           <div>
             <p className="kicker">Histórico interno</p>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={18} style={{ opacity: 0.6 }} /> Conversas e chat</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MessageSquare size={18} style={{ opacity: 0.6 }} />
+              {selectedInstance.label}
+            </h2>
           </div>
-          <Suspense fallback={<div className="date-filter-skeleton" />}>
-            <DateFilter current={activePeriod} />
-          </Suspense>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {hasMultiple && (
+              <Suspense fallback={<div className="date-filter-skeleton" style={{ width: 180 }} />}>
+                <CanalSelector instances={client.instances} currentCanal={selectedInstance.id} />
+              </Suspense>
+            )}
+            <Suspense fallback={<div className="date-filter-skeleton" />}>
+              <DateFilter current={activePeriod} />
+            </Suspense>
+          </div>
         </header>
 
         <ConversationViewer conversations={conversations} />

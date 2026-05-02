@@ -31,6 +31,7 @@ export type ChatConversation = {
   messages: ChatMessage[];
   messagesTruncated: boolean;
   aiSummary: ConversationSummary | null;
+  channelLabel?: string;
 };
 
 export type ReportAvailability = {

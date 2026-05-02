@@ -584,6 +584,9 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                         {conv.firstResponseTimeSecs != null && (
                           <span>TMP {Math.round(conv.firstResponseTimeSecs / 60)}min</span>
                         )}
+                        {conv.channelLabel && (
+                          <span className="cv-channel-badge">{conv.channelLabel}</span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -611,6 +614,9 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
               <span>{selected.remoteJid}</span>
             </div>
             <div className="cv-chips">
+              {selected.channelLabel && (
+                <span className="cv-channel-badge">{selected.channelLabel}</span>
+              )}
               <span className="cv-chip-stat">{selected.messageCount} msgs</span>
               {selected.firstResponseTimeSecs != null && (
                 <span className="cv-chip-stat">
