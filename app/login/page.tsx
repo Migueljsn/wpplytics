@@ -28,7 +28,12 @@ function LoginForm() {
       ? 'Erro ao entrar. Tente novamente.'
       : null;
 
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/admin';
+  const rawCallback = searchParams.get('callbackUrl') ?? '/admin';
+  // Ensure callbackUrl is absolute so NextAuth redirects to the correct host in production
+  const callbackUrl =
+    typeof window !== 'undefined' && rawCallback.startsWith('/')
+      ? `${window.location.origin}${rawCallback}`
+      : rawCallback;
 
   return (
     <form
