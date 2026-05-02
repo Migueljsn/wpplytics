@@ -156,6 +156,11 @@ export default async function QualitativeReportPage({ params }: Props) {
           <div className="report-title-block">
             <p className="kicker">Análise Qualitativa de Atendimento via WhatsApp</p>
             <h1>{run.client.name}</h1>
+            {run.instance?.label && (
+              <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand)', margin: '4px 0 0', letterSpacing: '-0.01em' }}>
+                {run.instance.label}
+              </p>
+            )}
             <p className="report-meta">
               {run.client.sector && <>{run.client.sector} &nbsp;·&nbsp;</>}
               {periodFrom} &nbsp;·&nbsp; Gerado em {run.completedAt?.toLocaleDateString('pt-BR') ?? '—'}
