@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/app/components/theme-toggle';
 import { createClient, updateClient, deleteClient, createInstance, deleteInstance } from './actions';
+import { CleanupButton } from './cleanup-button';
 
 type SearchParams = Promise<{
   error?: string; ok?: string;
@@ -28,7 +29,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [clients, connectedCount, recentMsgCount] = await Promise.all([
+  const [clients, connectedCount, recentMsgCount, webhookCount, totalMsgCount] = await Promise.all([
     prisma.client.findMany({
       include: {
         instances: true,
@@ -38,6 +39,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     }),
     prisma.waInstance.count({ where: { status: 'CONNECTED' } }),
     prisma.message.count({ where: { sentAt: { gte: sevenDaysAgo } } }),
+    prisma.webhookEvent.count(),
+    prisma.message.count(),
   ]);
 
   const totalInstances = clients.reduce((a, c) => a + c.instances.length, 0);
@@ -309,6 +312,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               </section>
             );
           })()}
+
+          {/* Maintenance */}
+          {!editingClient && !deletingClient && !deletingInst && (
+            <section className="admin-card">
+              <h2 className="admin-card-title" style={{ color: 'var(--warn)' }}>
+                <Trash2 size={16} /> Manutenção
+              </h2>
+              <CleanupButton webhookCount={webhookCount} messageCount={totalMsgCount} />
+            </section>
+          )}
 
           {/* Default state: create forms */}
           {!editingClient && !deletingClient && !deletingInst && (

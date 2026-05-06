@@ -912,6 +912,49 @@ button { font: inherit; }
   font-size: 0.88rem;
 }
 
+.cleanup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cleanup-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cleanup-stat {
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cleanup-stat-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.cleanup-stat-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cleanup-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: rgba(15,157,117,0.08);
+  border: 1px solid rgba(15,157,117,0.2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
 .cv-messages-loading {
   display: flex;
   align-items: center;
