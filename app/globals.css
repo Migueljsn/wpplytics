@@ -912,6 +912,15 @@ button { font: inherit; }
   font-size: 0.88rem;
 }
 
+.cv-messages-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
 .cv-truncation-notice {
   text-align: center;
   font-size: 0.78rem;

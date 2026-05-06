@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn, Search, BarChart2, Sparkles, CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import type { ChatConversation, ChatMessage, ConversationSummary } from '@/lib/types';
 
-const POLL_INTERVAL_MS = 15_000;
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min — só atualiza lista, não mensagens
 
 function initials(name: string) {
   return name
@@ -331,6 +331,8 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const [showMetrics, setShowMetrics] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [messagesMap, setMessagesMap] = useState<Record<string, { messages: ChatMessage[]; truncated: boolean }>>({});
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [summaryMap, setSummaryMap] = useState<Record<string, ConversationSummary>>(() => {
     const initial: Record<string, ConversationSummary> = {};
     for (const c of conversations) {
@@ -342,7 +344,28 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const isAtBottomRef = useRef(true);
 
   const visible = conversations.filter((c) => visibleIds.has(c.id));
-  const selected = visible.find((c) => c.id === selectedId) ?? null;
+  const selectedConv = visible.find((c) => c.id === selectedId) ?? null;
+  const selectedMessages = selectedId ? (messagesMap[selectedId] ?? null) : null;
+  const selected = selectedConv ? {
+    ...selectedConv,
+    messages: selectedMessages?.messages ?? [],
+    messagesTruncated: selectedMessages?.truncated ?? false,
+    messagesLoaded: selectedId !== null && selectedId in messagesMap,
+  } : null;
+
+  async function loadMessages(convId: string) {
+    if (convId in messagesMap) return;
+    setLoadingMessages(true);
+    try {
+      const res = await fetch(`/api/conversations/${convId}/messages`);
+      if (res.ok) {
+        const data = await res.json() as { messages: ChatMessage[]; truncated: boolean };
+        setMessagesMap((prev) => ({ ...prev, [convId]: data }));
+      }
+    } finally {
+      setLoadingMessages(false);
+    }
+  }
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -365,6 +388,12 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     setVisibleIds(new Set(conversations.map((c) => c.id)));
   }, [conversations]);
 
+  // Load messages for first conversation on mount
+  useEffect(() => {
+    if (conversations[0]?.id) void loadMessages(conversations[0].id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const el = threadRef.current;
     if (!el) return;
@@ -376,11 +405,14 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   }, []);
 
   useEffect(() => {
+    if (!selectedId) return;
+    void loadMessages(selectedId);
     if (threadRef.current && isAtBottomRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
     setShowMetrics(false);
     setShowAISummary(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   useEffect(() => {
@@ -484,10 +516,15 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="cv-badge">{visible.length}</span>
-            <span className="cv-sync-label" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <button
+              className="cv-sync-label"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              onClick={() => { router.refresh(); setLastUpdated(new Date()); setSecondsAgo(0); }}
+              title="Atualizar lista"
+            >
               <RefreshCw size={11} className={secondsAgo < 5 ? 'spin-icon' : ''} style={{ opacity: 0.6 }} />
-              {secondsAgo < 5 ? 'agora' : `${secondsAgo}s`}
-            </span>
+              {secondsAgo < 5 ? 'agora' : `${Math.floor(secondsAgo / 60) > 0 ? `${Math.floor(secondsAgo / 60)}m` : `${secondsAgo}s`}`}
+            </button>
           </div>
         </div>
         <div className="cv-search-bar">
@@ -661,12 +698,21 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
           )}
 
           <div className="cv-thread" ref={threadRef}>
-            {selected.messagesTruncated && (
-              <div className="cv-truncation-notice">
-                Exibindo as últimas 500 mensagens desta conversa.
+            {loadingMessages && !selected.messagesLoaded ? (
+              <div className="cv-messages-loading">
+                <RefreshCw size={16} className="spin-icon" style={{ opacity: 0.5 }} />
+                <span>Carregando mensagens…</span>
               </div>
+            ) : (
+              <>
+                {selected.messagesTruncated && (
+                  <div className="cv-truncation-notice">
+                    Exibindo as últimas 500 mensagens desta conversa.
+                  </div>
+                )}
+                {renderMessages(selected.messages)}
+              </>
             )}
-            {renderMessages(selected.messages)}
           </div>
 
           <div className="cv-footer">

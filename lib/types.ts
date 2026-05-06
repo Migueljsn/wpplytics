@@ -30,6 +30,7 @@ export type ChatConversation = {
   firstResponseTimeSecs?: number | null;
   messages: ChatMessage[];
   messagesTruncated: boolean;
+  messagesLoaded?: boolean;
   aiSummary: ConversationSummary | null;
   channelLabel?: string;
 };

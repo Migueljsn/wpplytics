@@ -197,14 +197,6 @@ export async function POST(request: NextRequest) {
     where: { evolutionName: payload.instance },
   });
 
-  await prisma.webhookEvent.create({
-    data: {
-      instanceId: waInstance?.id ?? null,
-      eventName: payload.event,
-      payload: body as object,
-    },
-  });
-
   if (payload.event === 'connection.update' && waInstance && payload.data) {
     await handleConnectionUpdate(waInstance.id, payload.data as Record<string, unknown>);
   }

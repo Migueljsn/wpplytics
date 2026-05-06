@@ -63,48 +63,24 @@ export async function getInstanceConversations(
     include: { contact: true },
   });
 
-  return Promise.all(
-    conversations.map(async (conv) => {
-      const messages = await prisma.message.findMany({
-        where: {
-          instanceId,
-          remoteJid: conv.remoteJid,
-          sentAt: { gte: conv.startedAt, lte: conv.endedAt },
-        },
-        orderBy: { sentAt: 'desc' },
-        take: 500,
-      });
-
-      return {
-        id: conv.id,
-        remoteJid: conv.remoteJid,
-        contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
-        startedAt: conv.startedAt.toISOString(),
-        endedAt: conv.endedAt.toISOString(),
-        messageCount: conv.messageCount,
-        inboundCount: conv.inboundCount,
-        outboundCount: conv.outboundCount,
-        firstResponseTimeSecs: conv.firstResponseTimeSecs,
-        messagesTruncated: messages.length === 500,
-        aiSummary: (() => {
-          if (!conv.summary) return null;
-          try { return JSON.parse(conv.summary) as import('@/lib/types').ConversationSummary; } catch { return null; }
-        })(),
-        messages: messages.reverse().map((msg) => ({
-          id: msg.id,
-          fromMe: msg.fromMe,
-          sentAt: msg.sentAt.toISOString(),
-          textContent: msg.textContent,
-          messageType: normalizeMessageType(msg.messageType),
-          mediaCaption: msg.mediaCaption,
-          mediaFileName: msg.mediaFileName,
-          mediaMimetype: msg.mediaMimetype,
-          mediaDuration: msg.mediaDuration,
-          mediaSize: msg.mediaSize,
-        })),
-      };
-    }),
-  );
+  return conversations.map((conv) => ({
+    id: conv.id,
+    remoteJid: conv.remoteJid,
+    contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
+    startedAt: conv.startedAt.toISOString(),
+    endedAt: conv.endedAt.toISOString(),
+    messageCount: conv.messageCount,
+    inboundCount: conv.inboundCount,
+    outboundCount: conv.outboundCount,
+    firstResponseTimeSecs: conv.firstResponseTimeSecs,
+    messagesTruncated: false,
+    messagesLoaded: false,
+    aiSummary: (() => {
+      if (!conv.summary) return null;
+      try { return JSON.parse(conv.summary) as import('@/lib/types').ConversationSummary; } catch { return null; }
+    })(),
+    messages: [],
+  }));
 }
 
 export async function getReportPreviews(
