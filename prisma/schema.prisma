@@ -77,7 +77,6 @@ model WaInstance {
   client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   messages          Message[]
   conversations     Conversation[]
-  webhookEvents     WebhookEvent[]
   analysisRuns      AnalysisRun[]
 
   @@index([clientId, status])
@@ -141,19 +140,6 @@ model Conversation {
 
   @@index([instanceId, startedAt])
   @@index([remoteJid, startedAt])
-}
-
-model WebhookEvent {
-  id             String      @id @default(cuid())
-  instanceId     String?
-  eventName      String
-  externalRef    String?
-  payload        Json
-  receivedAt     DateTime    @default(now())
-  processedAt    DateTime?
-  instance       WaInstance? @relation(fields: [instanceId], references: [id], onDelete: SetNull)
-
-  @@index([eventName, receivedAt])
 }
 
 model AnalysisRun {

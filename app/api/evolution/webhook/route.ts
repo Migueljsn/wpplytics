@@ -85,6 +85,9 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
       const mediaDuration = (mediaData?.seconds as number | undefined) ?? null;
       const mediaSize = (mediaData?.fileLength as number | undefined) ?? null;
 
+      // Store only the fields Evolution API needs for media retrieval — not the full webhook payload
+      const slimPayload = { key: msgKey ?? null, message: msgData ?? null, messageType: msgType, messageTimestamp: ts ?? null } as object;
+
       try {
         await prisma.message.create({
           data: {
@@ -101,16 +104,17 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
             mediaMimetype,
             mediaDuration,
             mediaSize,
-            rawPayload: msg as object,
+            rawPayload: slimPayload,
           },
         });
       } catch {
         continue;
       }
 
-      // Upsert conversation — ignore hidden ones so new messages open a fresh conversation
+      // Upsert conversation — ignore hidden ones and conversations idle for > 24h
+      const sessionCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const conv = await prisma.conversation.findFirst({
-        where: { instanceId: waInstance.id, remoteJid, hidden: false },
+        where: { instanceId: waInstance.id, remoteJid, hidden: false, endedAt: { gte: sessionCutoff } },
         orderBy: { startedAt: 'desc' },
       });
 

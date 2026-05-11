@@ -6,7 +6,7 @@ import { getDashboardClient, getInstanceConversations, getReportPreviews } from 
 import { ConversationViewer } from './conversation-viewer';
 import { DateFilter } from './date-filter';
 import { GenerateQualitativeButton } from './generate-qualitative-button';
-import { signOut } from '@/auth';
+import { auth, signOut } from '@/auth';
 
 type ClientPageProps = {
   params: Promise<{ clientId: string }>;
@@ -36,8 +36,12 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
   const { period, canal } = await searchParams;
   const { from, to } = parsePeriod(period);
 
-  const client = await getDashboardClient(clientId);
+  const [client, session] = await Promise.all([
+    getDashboardClient(clientId),
+    auth(),
+  ]);
   if (!client) notFound();
+  const isAdmin = (session?.user as Record<string, unknown> | undefined)?.role === 'ADMIN';
 
   if (client.instances.length === 0) {
     return (
@@ -58,7 +62,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
 
   // Multiple instances and no canal selected → show channel picker
   if (client.instances.length > 1 && !canal) {
-    return <ChannelPicker client={client} />;
+    return <ChannelPicker client={client} isAdmin={isAdmin} />;
   }
 
   // Single instance or canal selected → full dashboard
@@ -87,9 +91,11 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
             <p className="kicker" style={{ margin: 0 }}>WPPlytics</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle />
-              <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <ShieldCheck size={13} /> Admin
-              </a>
+              {isAdmin && (
+                <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ShieldCheck size={13} /> Admin
+                </a>
+              )}
               <form action={async () => {
                 'use server';
                 await signOut({ redirectTo: '/login' });
@@ -204,14 +210,16 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
   );
 }
 
-function ChannelPicker({ client }: { client: Awaited<ReturnType<typeof getDashboardClient>> & {} }) {
+function ChannelPicker({ client, isAdmin }: { client: Awaited<ReturnType<typeof getDashboardClient>> & {}; isAdmin: boolean }) {
   return (
     <main className="channel-picker-shell">
       <div style={{ position: 'fixed', top: 20, right: 20, display: 'flex', gap: 8, alignItems: 'center' }}>
         <ThemeToggle />
-        <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <ShieldCheck size={13} /> Admin
-        </a>
+        {isAdmin && (
+          <a href="/admin" className="admin-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <ShieldCheck size={13} /> Admin
+          </a>
+        )}
         <form action={async () => {
           'use server';
           await signOut({ redirectTo: '/login' });

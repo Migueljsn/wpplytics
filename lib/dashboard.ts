@@ -3,7 +3,6 @@ import { getReportAvailability } from '@/lib/report-availability';
 import type {
   DashboardClient, ChatConversation, QuantitativePreview, QualitativePreview,
   QuantitativeReport, ResponseTimeBucket, TmpByHour, VolumeByDate,
-  ConversationSummary,
 } from '@/lib/types';
 
 export async function getDashboardClient(clientId: string): Promise<DashboardClient | null> {
@@ -118,73 +117,6 @@ export async function getReportPreviews(
     },
     qualitative: { patterns: [], opportunities: [], objections: [] },
   };
-}
-
-export async function getMultipleInstanceConversations(
-  instances: { id: string; label: string }[],
-  from: Date | null,
-  to: Date,
-): Promise<ChatConversation[]> {
-  if (instances.length === 0) return [];
-  if (instances.length === 1) {
-    const convs = await getInstanceConversations(instances[0].id, from, to);
-    return convs.map((c) => ({ ...c, channelLabel: instances[0].label }));
-  }
-
-  const instanceIds = instances.map((i) => i.id);
-  const labelMap = new Map(instances.map((i) => [i.id, i.label]));
-  const dateFilter = from ? { gte: from, lte: to } : undefined;
-
-  const conversations = await prisma.conversation.findMany({
-    where: { instanceId: { in: instanceIds }, hidden: false, ...(dateFilter ? { endedAt: dateFilter } : {}) },
-    orderBy: { endedAt: 'desc' },
-    take: 50,
-    include: { contact: true },
-  });
-
-  return Promise.all(
-    conversations.map(async (conv) => {
-      const messages = await prisma.message.findMany({
-        where: {
-          instanceId: conv.instanceId,
-          remoteJid: conv.remoteJid,
-          sentAt: { gte: conv.startedAt, lte: conv.endedAt },
-        },
-        orderBy: { sentAt: 'desc' },
-        take: 500,
-      });
-
-      return {
-        id: conv.id,
-        remoteJid: conv.remoteJid,
-        contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
-        startedAt: conv.startedAt.toISOString(),
-        endedAt: conv.endedAt.toISOString(),
-        messageCount: conv.messageCount,
-        inboundCount: conv.inboundCount,
-        outboundCount: conv.outboundCount,
-        firstResponseTimeSecs: conv.firstResponseTimeSecs,
-        messagesTruncated: messages.length === 500,
-        channelLabel: labelMap.get(conv.instanceId),
-        aiSummary: (() => {
-          if (!conv.summary) return null;
-          try { return JSON.parse(conv.summary) as ConversationSummary; } catch { return null; }
-        })(),
-        messages: messages.reverse().map((msg) => ({
-          id: msg.id,
-          fromMe: msg.fromMe,
-          sentAt: msg.sentAt.toISOString(),
-          textContent: msg.textContent,
-          messageType: normalizeMessageType(msg.messageType),
-          mediaCaption: msg.mediaCaption,
-          mediaFileName: msg.mediaFileName,
-          mediaMimetype: msg.mediaMimetype,
-          mediaDuration: msg.mediaDuration,
-          mediaSize: msg.mediaSize,
-        })),
-      };
-    }),
-  );
 }
 
 export async function getAggregateReportPreviews(

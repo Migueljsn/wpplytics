@@ -29,7 +29,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [clients, connectedCount, recentMsgCount, webhookCount, totalMsgCount] = await Promise.all([
+  const [clients, connectedCount, recentMsgCount, totalMsgCount] = await Promise.all([
     prisma.client.findMany({
       include: {
         instances: true,
@@ -39,7 +39,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     }),
     prisma.waInstance.count({ where: { status: 'CONNECTED' } }),
     prisma.message.count({ where: { sentAt: { gte: sevenDaysAgo } } }),
-    prisma.webhookEvent.count(),
     prisma.message.count(),
   ]);
 
@@ -319,7 +318,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               <h2 className="admin-card-title" style={{ color: 'var(--warn)' }}>
                 <Trash2 size={16} /> Manutenção
               </h2>
-              <CleanupButton webhookCount={webhookCount} messageCount={totalMsgCount} />
+              <CleanupButton messageCount={totalMsgCount} />
             </section>
           )}
 

@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Trash2, Loader2, CheckCircle2 } from 'lucide-react';
 import { runCleanup } from './actions';
 
-type Result = { deletedWebhooks: number; deletedMessages: number; remaining: number };
+type Result = { deletedMessages: number; remaining: number };
 
-export function CleanupButton({ webhookCount, messageCount }: { webhookCount: number; messageCount: number }) {
+export function CleanupButton({ messageCount }: { messageCount: number }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -24,10 +24,6 @@ export function CleanupButton({ webhookCount, messageCount }: { webhookCount: nu
     <div className="cleanup-card">
       <div className="cleanup-stats">
         <div className="cleanup-stat">
-          <span className="cleanup-stat-value">{result ? 0 : webhookCount}</span>
-          <span className="cleanup-stat-label">Eventos webhook</span>
-        </div>
-        <div className="cleanup-stat">
           <span className="cleanup-stat-value">{result ? result.remaining : messageCount}</span>
           <span className="cleanup-stat-label">Mensagens no banco</span>
         </div>
@@ -37,13 +33,12 @@ export function CleanupButton({ webhookCount, messageCount }: { webhookCount: nu
         <div className="cleanup-result">
           <CheckCircle2 size={15} style={{ color: 'var(--brand)', flexShrink: 0 }} />
           <span>
-            Limpeza concluída — <strong>{result.deletedWebhooks}</strong> eventos e{' '}
-            <strong>{result.deletedMessages}</strong> mensagens removidas.
+            Limpeza concluída — <strong>{result.deletedMessages}</strong> mensagens removidas.
           </span>
         </div>
       ) : (
         <p className="muted" style={{ fontSize: '0.8rem', margin: 0 }}>
-          Remove todos os eventos de webhook e mensagens com mais de 30 dias.
+          Remove mensagens com mais de 30 dias.
         </p>
       )}
 

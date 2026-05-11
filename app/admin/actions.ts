@@ -113,12 +113,9 @@ export async function deleteInstance(formData: FormData) {
   redirect('/admin?ok=instancia-excluida');
 }
 
-export async function runCleanup(): Promise<{ deletedWebhooks: number; deletedMessages: number; remaining: number }> {
+export async function runCleanup(): Promise<{ deletedMessages: number; remaining: number }> {
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const [deletedWebhooks, deletedMessages] = await Promise.all([
-    prisma.webhookEvent.deleteMany({}),
-    prisma.message.deleteMany({ where: { sentAt: { lt: cutoff } } }),
-  ]);
+  const deleted = await prisma.message.deleteMany({ where: { sentAt: { lt: cutoff } } });
   const remaining = await prisma.message.count();
-  return { deletedWebhooks: deletedWebhooks.count, deletedMessages: deletedMessages.count, remaining };
+  return { deletedMessages: deleted.count, remaining };
 }
