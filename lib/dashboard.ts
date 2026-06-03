@@ -56,30 +56,55 @@ export async function getInstanceConversations(
 ): Promise<ChatConversation[]> {
   const dateFilter = from ? { gte: from, lte: to } : undefined;
   const conversations = await prisma.conversation.findMany({
-    where: { instanceId, hidden: false, ...(dateFilter ? { endedAt: dateFilter } : {}) },
+    where: {
+      instanceId,
+      hidden: false,
+      NOT: { remoteJid: { endsWith: '@g.us' } },
+      ...(dateFilter ? { endedAt: dateFilter } : {}),
+    },
     orderBy: { endedAt: 'desc' },
-    take: 50,
     include: { contact: true },
   });
 
-  return conversations.map((conv) => ({
-    id: conv.id,
-    remoteJid: conv.remoteJid,
-    contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
-    startedAt: conv.startedAt.toISOString(),
-    endedAt: conv.endedAt.toISOString(),
-    messageCount: conv.messageCount,
-    inboundCount: conv.inboundCount,
-    outboundCount: conv.outboundCount,
-    firstResponseTimeSecs: conv.firstResponseTimeSecs,
-    messagesTruncated: false,
-    messagesLoaded: false,
-    aiSummary: (() => {
-      if (!conv.summary) return null;
-      try { return JSON.parse(conv.summary) as import('@/lib/types').ConversationSummary; } catch { return null; }
-    })(),
-    messages: [],
-  }));
+  // Fetch last message per remoteJid in one shot for sidebar previews
+  const uniqueJids = [...new Set(conversations.map((c) => c.remoteJid))];
+  const latestMsgs = uniqueJids.length > 0
+    ? await prisma.message.findMany({
+        where: { instanceId, remoteJid: { in: uniqueJids } },
+        orderBy: [{ remoteJid: 'asc' }, { sentAt: 'desc' }],
+        distinct: ['remoteJid'],
+        select: { remoteJid: true, textContent: true, fromMe: true, messageType: true },
+      })
+    : [];
+  const latestByJid = new Map(latestMsgs.map((m) => [m.remoteJid, m]));
+
+  return conversations.map((conv) => {
+    const lastMsg = latestByJid.get(conv.remoteJid) ?? null;
+    const lastMessagePreview =
+      lastMsg?.textContent ??
+      (lastMsg && lastMsg.messageType !== 'unknown' ? '📎 mídia' : null);
+
+    return {
+      id: conv.id,
+      remoteJid: conv.remoteJid,
+      contactName: conv.contact?.displayName ?? conv.remoteJid.split('@')[0],
+      startedAt: conv.startedAt.toISOString(),
+      endedAt: conv.endedAt.toISOString(),
+      messageCount: conv.messageCount,
+      inboundCount: conv.inboundCount,
+      outboundCount: conv.outboundCount,
+      firstResponseTimeSecs: conv.firstResponseTimeSecs,
+      messagesTruncated: false,
+      messagesLoaded: false,
+      aiSummary: (() => {
+        if (!conv.summary) return null;
+        try { return JSON.parse(conv.summary) as import('@/lib/types').ConversationSummary; } catch { return null; }
+      })(),
+      messages: [],
+      lastMessagePreview: lastMessagePreview ?? null,
+      lastMessageFromMe: lastMsg?.fromMe ?? false,
+    };
+  });
 }
 
 export async function getReportPreviews(

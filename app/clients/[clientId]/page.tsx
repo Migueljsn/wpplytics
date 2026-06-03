@@ -204,7 +204,7 @@ export default async function ClientPage({ params, searchParams }: ClientPagePro
           </Suspense>
         </header>
 
-        <ConversationViewer conversations={conversations} />
+        <ConversationViewer conversations={conversations} instanceId={selectedInstance.id} />
       </section>
     </main>
   );

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, ImageOff, ZoomIn, Search, BarChart2, Sparkles, CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Lock, EyeOff, RefreshCw, Mic, FileText, Video, Paperclip, X, Download, Search, BarChart2, Sparkles, CheckCircle2, MinusCircle, XCircle, Image as ImageIcon } from 'lucide-react';
 import type { ChatConversation, ChatMessage, ConversationSummary } from '@/lib/types';
+import type { SearchResult } from '@/app/api/conversations/search/route';
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min — só atualiza lista, não mensagens
 
@@ -65,115 +65,38 @@ function makeSnippet(text: string, query: string) {
   };
 }
 
-function ImageBubble({ msg }: { msg: ChatMessage }) {
-  const src = `/api/media/${msg.id}`;
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [open, setOpen] = useState(false);
-  const isSticker = msg.messageType === 'sticker';
-
-  const close = useCallback(() => setOpen(false), []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, close]);
-
-  return (
-    <>
-      <div className={`cv-media-image${isSticker ? ' cv-media-sticker' : ''}`}>
-        {status === 'error' ? (
-          <div className="cv-img-error">
-            <ImageOff size={20} />
-            <span>Imagem não disponível</span>
-          </div>
-        ) : (
-          <div className="cv-img-wrap">
-            {status === 'loading' && <div className="cv-img-skeleton" />}
-            <img
-              src={src}
-              alt={msg.mediaCaption ?? 'imagem'}
-              className="cv-img-thumb"
-              style={{ opacity: status === 'loading' ? 0 : 1 }}
-              onLoad={() => setStatus('loaded')}
-              onError={() => setStatus('error')}
-            />
-            {status === 'loaded' && !isSticker && (
-              <button className="cv-img-zoom" onClick={() => setOpen(true)} aria-label="Ampliar imagem">
-                <ZoomIn size={14} />
-              </button>
-            )}
-          </div>
-        )}
-        {isSticker && <span className="cv-media-tag">Sticker</span>}
-      </div>
-      {msg.mediaCaption && <p className="cv-media-caption">{msg.mediaCaption}</p>}
-
-      {open && typeof document !== 'undefined' && createPortal(
-        <div className="cv-lightbox" onClick={close} role="dialog" aria-modal="true">
-          <div className="cv-lightbox-inner" onClick={e => e.stopPropagation()}>
-            <img src={src} alt={msg.mediaCaption ?? 'imagem'} className="cv-lightbox-img" />
-            {msg.mediaCaption && <p className="cv-lightbox-caption">{msg.mediaCaption}</p>}
-          </div>
-          <button className="cv-lightbox-close" onClick={close} aria-label="Fechar">
-            <X size={18} />
-          </button>
-        </div>,
-        document.body,
-      )}
-    </>
-  );
-}
-
 function MediaBubble({ msg }: { msg: ChatMessage }) {
   const src = `/api/media/${msg.id}`;
 
-  if (msg.messageType === 'audio') {
-    return (
-      <div className="cv-media-audio">
-        <Mic size={14} className="cv-media-icon" />
-        <audio controls preload="none" className="cv-audio-player">
-          <source src={src} type={msg.mediaMimetype ?? 'audio/ogg'} />
-        </audio>
-        {msg.mediaDuration && <span className="cv-media-meta">{formatDuration(msg.mediaDuration)}</span>}
-      </div>
-    );
-  }
+  const iconMap: Record<string, React.ReactNode> = {
+    audio:    <Mic size={16} className="cv-media-icon" />,
+    image:    <ImageIcon size={16} className="cv-media-icon" />,
+    video:    <Video size={16} className="cv-media-icon" />,
+    document: <FileText size={16} className="cv-media-icon" />,
+    sticker:  <Paperclip size={16} className="cv-media-icon" />,
+  };
+  const labelMap: Record<string, string> = {
+    audio: 'Áudio', image: 'Imagem', video: 'Vídeo',
+    document: msg.mediaFileName ?? 'Documento', sticker: 'Sticker',
+  };
 
-  if (msg.messageType === 'image' || msg.messageType === 'sticker') {
-    return <ImageBubble msg={msg} />;
-  }
-
-  if (msg.messageType === 'document') {
-    return (
-      <a href={src} download={msg.mediaFileName ?? true} className="cv-media-doc" target="_blank" rel="noreferrer">
-        <FileText size={20} className="cv-media-icon" />
-        <div className="cv-media-doc-info">
-          <span className="cv-media-doc-name">{msg.mediaFileName ?? 'Documento'}</span>
-          {msg.mediaSize && <span className="cv-media-meta">{formatBytes(msg.mediaSize)}</span>}
-        </div>
-        <Download size={14} className="cv-media-dl" />
-      </a>
-    );
-  }
-
-  if (msg.messageType === 'video') {
-    return (
-      <div className="cv-media-video">
-        <Video size={16} className="cv-media-icon" />
-        <span>Vídeo</span>
-        {msg.mediaDuration && <span className="cv-media-meta">{formatDuration(msg.mediaDuration)}</span>}
-        {msg.mediaSize && <span className="cv-media-meta">{formatBytes(msg.mediaSize)}</span>}
-      </div>
-    );
-  }
+  const icon = iconMap[msg.messageType] ?? <Paperclip size={16} className="cv-media-icon" />;
+  const label = labelMap[msg.messageType] ?? 'Arquivo';
+  const meta = [
+    msg.mediaDuration ? formatDuration(msg.mediaDuration) : null,
+    msg.mediaSize ? formatBytes(msg.mediaSize) : null,
+  ].filter(Boolean).join(' · ');
 
   return (
-    <div className="cv-media-unknown">
-      <Paperclip size={13} className="cv-media-icon" />
-      <span>Mídia</span>
-    </div>
+    <a href={src} download={msg.mediaFileName ?? true} className="cv-media-doc" target="_blank" rel="noreferrer">
+      {icon}
+      <div className="cv-media-doc-info">
+        <span className="cv-media-doc-name">{label}</span>
+        {meta && <span className="cv-media-meta">{meta}</span>}
+        {msg.mediaCaption && <span className="cv-media-meta">{msg.mediaCaption}</span>}
+      </div>
+      <Download size={14} className="cv-media-dl" />
+    </a>
   );
 }
 
@@ -318,7 +241,7 @@ function renderMessages(messages: ChatMessage[]) {
   return nodes;
 }
 
-export function ConversationViewer({ conversations }: { conversations: ChatConversation[] }) {
+export function ConversationViewer({ conversations, instanceId }: { conversations: ChatConversation[]; instanceId: string }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(conversations[0]?.id ?? null);
   const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set(conversations.map((c) => c.id)));
@@ -327,6 +250,9 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
   const [showMetrics, setShowMetrics] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
@@ -367,22 +293,27 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
     }
   }
 
-  const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return null;
-    const contacts = visible.filter(
-      (c) => c.contactName.toLowerCase().includes(q) || c.remoteJid.toLowerCase().includes(q),
-    );
-    const messages: { conv: ChatConversation; msg: ChatMessage }[] = [];
-    for (const conv of visible) {
-      for (const msg of conv.messages) {
-        if (msg.textContent?.toLowerCase().includes(q)) {
-          messages.push({ conv, msg });
-        }
-      }
+  function handleSearchChange(q: string) {
+    setSearchQuery(q);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!q.trim() || q.trim().length < 2) {
+      setSearchResults(null);
+      setSearchLoading(false);
+      return;
     }
-    return { contacts, messages };
-  }, [searchQuery, visible]);
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/conversations/search?instanceId=${encodeURIComponent(instanceId)}&q=${encodeURIComponent(q.trim())}`);
+        if (res.ok) setSearchResults(await res.json() as SearchResult);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+  }
+
+  // Keep memoized flag for whether we're in search mode
+  const isSearching = useMemo(() => searchQuery.trim().length >= 2, [searchQuery]);
 
   useEffect(() => {
     setVisibleIds(new Set(conversations.map((c) => c.id)));
@@ -532,35 +463,38 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
           <input
             type="text"
             className="cv-search-input"
-            placeholder="Buscar conversa ou mensagem…"
+            placeholder="Buscar contato ou mensagem…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
-          {searchQuery && (
-            <button className="cv-search-clear" onClick={() => setSearchQuery('')} aria-label="Limpar busca">
+          {searchLoading && <RefreshCw size={12} className="cv-search-icon spin-icon" style={{ right: 8, left: 'auto' }} />}
+          {searchQuery && !searchLoading && (
+            <button className="cv-search-clear" onClick={() => { handleSearchChange(''); setSearchResults(null); }} aria-label="Limpar busca">
               <X size={12} />
             </button>
           )}
         </div>
         <div className="cv-list-scroll">
-          {searchResults ? (
-            searchResults.contacts.length === 0 && searchResults.messages.length === 0 ? (
+          {isSearching ? (
+            !searchResults ? (
+              <div className="cv-search-empty">{searchLoading ? 'Buscando…' : 'Digite para buscar'}</div>
+            ) : searchResults.contacts.length === 0 && searchResults.messages.length === 0 ? (
               <div className="cv-search-empty">Nenhum resultado para &ldquo;{searchQuery}&rdquo;</div>
             ) : (
               <>
                 {searchResults.contacts.length > 0 && (
                   <>
                     <div className="cv-search-section">Contatos · {searchResults.contacts.length}</div>
-                    {searchResults.contacts.map((conv) => (
-                      <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
-                        <button className="cv-row" onClick={() => setSelectedId(conv.id)}>
-                          <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                    {searchResults.contacts.map((result) => (
+                      <div key={result.id} className={`cv-row-wrap${result.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                        <button className="cv-row" onClick={() => setSelectedId(result.id)}>
+                          <div className="cv-avatar cv-avatar-sm">{initials(result.contactName)}</div>
                           <div className="cv-row-body">
                             <div className="cv-row-head">
-                              <span className="cv-row-name">{conv.contactName}</span>
-                              <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
+                              <span className="cv-row-name">{result.contactName}</span>
+                              <span className="cv-row-time">{formatLastTime(result.endedAt)}</span>
                             </div>
-                            <p className="cv-row-preview">{conv.remoteJid.split('@')[0]}</p>
+                            <p className="cv-row-preview">{result.remoteJid.split('@')[0]}</p>
                           </div>
                         </button>
                       </div>
@@ -570,21 +504,22 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                 {searchResults.messages.length > 0 && (
                   <>
                     <div className="cv-search-section">Mensagens · {searchResults.messages.length}</div>
-                    {searchResults.messages.map(({ conv, msg }) => {
-                      const s = makeSnippet(msg.textContent ?? '', searchQuery);
+                    {searchResults.messages.map((result) => {
+                      const s = makeSnippet(result.snippet, searchQuery);
                       return (
-                        <div key={msg.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
+                        <div key={result.convId} className={`cv-row-wrap${result.convId === selectedId ? ' cv-row-wrap-active' : ''}`}>
                           <button
                             className="cv-row"
-                            onClick={() => { setSelectedId(conv.id); setHighlightMsgId(msg.id); }}
+                            onClick={() => setSelectedId(result.convId)}
                           >
-                            <div className="cv-avatar cv-avatar-sm">{initials(conv.contactName)}</div>
+                            <div className="cv-avatar cv-avatar-sm">{initials(result.contactName)}</div>
                             <div className="cv-row-body">
                               <div className="cv-row-head">
-                                <span className="cv-row-name">{conv.contactName}</span>
-                                <span className="cv-row-time">{formatTime(msg.sentAt)}</span>
+                                <span className="cv-row-name">{result.contactName}</span>
+                                <span className="cv-row-time">{formatLastTime(result.endedAt)}</span>
                               </div>
                               <p className="cv-search-snippet">
+                                {result.fromMe && <span className="cv-me">Você: </span>}
                                 {s.before}<mark className="cv-search-mark">{s.match}</mark>{s.after}
                               </p>
                             </div>
@@ -598,7 +533,6 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
             )
           ) : (
             visible.map((conv) => {
-              const lastMsg = conv.messages[conv.messages.length - 1];
               const isDeleting = deletingId === conv.id;
               return (
                 <div key={conv.id} className={`cv-row-wrap${conv.id === selectedId ? ' cv-row-wrap-active' : ''}`}>
@@ -613,8 +547,8 @@ export function ConversationViewer({ conversations }: { conversations: ChatConve
                         <span className="cv-row-time">{formatLastTime(conv.endedAt)}</span>
                       </div>
                       <p className="cv-row-preview">
-                        {lastMsg?.fromMe && <span className="cv-me">Você: </span>}
-                        {lastMsg?.textContent || '📎 mídia'}
+                        {conv.lastMessageFromMe && <span className="cv-me">Você: </span>}
+                        {conv.lastMessagePreview ?? '—'}
                       </p>
                       <div className="cv-row-meta">
                         <span>{conv.messageCount} msgs</span>

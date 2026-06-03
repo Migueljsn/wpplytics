@@ -33,6 +33,8 @@ export type ChatConversation = {
   messagesLoaded?: boolean;
   aiSummary: ConversationSummary | null;
   channelLabel?: string;
+  lastMessagePreview: string | null;
+  lastMessageFromMe: boolean;
 };
 
 export type ReportAvailability = {
