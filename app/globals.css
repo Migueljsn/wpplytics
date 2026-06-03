@@ -2604,13 +2604,15 @@ html.dark .admin-stat-item { background: rgba(19,25,32,0.7); }
 
 .inst-modal {
   position: relative;
-  width: min(400px, 100%);
+  width: min(440px, 100%);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   padding: 32px 28px 28px;
   box-shadow: var(--shadow-lg);
   animation: scaleIn 0.22s var(--ease-spring) both;
+  max-height: 90dvh;
+  overflow-y: auto;
 }
 
 .inst-modal-close {
@@ -2653,18 +2655,18 @@ html.dark .admin-stat-item { background: rgba(19,25,32,0.7); }
 
 .inst-qr-frame {
   background: #fff;
-  border: 3px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
   display: inline-flex;
   box-shadow: var(--shadow-sm);
 }
 
 .inst-qr-img {
-  width: 220px;
-  height: 220px;
+  width: 256px;
+  height: 256px;
   display: block;
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 /* dark mode */
