@@ -9,6 +9,7 @@ const envSchema = z.object({
   EVOLUTION_WEBHOOK_SECRET: z.string().default('CHANGE_ME'),
   EVOLUTION_API_BASE_URL: z.string().url().optional(),
   EVOLUTION_API_KEY: z.string().optional(),
+  APP_URL: z.string().url().optional(),
   OPENAI_API_KEY: z.string().optional(),
   REDIS_URL: z.string().optional(),
   AUTH_SECRET: z.string().optional(),

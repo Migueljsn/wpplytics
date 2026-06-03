@@ -63,6 +63,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <div>
           <p className="kicker" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <ShieldCheck size={14} style={{ opacity: 0.7 }} /> WPPlytics
+            <a href="/admin/instances" className="admin-nav-link" style={{ marginLeft: 4 }}>
+              <Wifi size={12} /> Instâncias
+            </a>
           </p>
           <h1 className="admin-title">Painel de Administração</h1>
         </div>

@@ -2529,4 +2529,148 @@ html.dark .admin-stat-item { background: rgba(19,25,32,0.7); }
   .admin-client-actions { width: 100%; justify-content: flex-end; }
   .dashboard-shell { width: calc(100vw - 24px); margin: 12px auto; }
   .cv-layout { height: 65vh; }
+  .inst-table th, .inst-table td { padding: 10px 12px; }
+  .inst-actions { flex-wrap: wrap; }
 }
+
+/* ── Instances page ── */
+.inst-table-wrap {
+  overflow-x: auto;
+}
+
+.inst-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.inst-table thead {
+  background: var(--panel-muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.inst-table th {
+  padding: 11px 20px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.inst-table td {
+  padding: 14px 20px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+
+.inst-table tbody tr {
+  transition: background var(--transition);
+}
+.inst-table tbody tr:last-child td { border-bottom: none; }
+.inst-table tbody tr:hover { background: rgba(15, 157, 117, 0.03); }
+.inst-row-active { background: var(--brand-soft) !important; }
+
+.inst-evo-name {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.inst-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ── QR Code modal ── */
+.inst-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease both;
+  padding: 24px;
+}
+
+.inst-modal {
+  position: relative;
+  width: min(400px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 32px 28px 28px;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.22s var(--ease-spring) both;
+}
+
+.inst-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background var(--transition), color var(--transition);
+}
+.inst-modal-close:hover { background: var(--line); color: var(--text); }
+
+.inst-modal-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.inst-modal-title svg { opacity: 0.7; flex-shrink: 0; }
+
+.inst-modal-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 4px;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.inst-qr-frame {
+  background: #fff;
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: inline-flex;
+  box-shadow: var(--shadow-sm);
+}
+
+.inst-qr-img {
+  width: 220px;
+  height: 220px;
+  display: block;
+  border-radius: 6px;
+}
+
+/* dark mode */
+html.dark .inst-modal { background: rgba(19, 25, 32, 0.97); }
+html.dark .inst-modal-close { background: rgba(255,255,255,0.06); }
+html.dark .inst-table thead { background: rgba(255,255,255,0.03); }
+html.dark .inst-table tbody tr:hover { background: rgba(15, 157, 117, 0.06); }
+html.dark .inst-row-active { background: rgba(15, 157, 117, 0.12) !important; }
+html.dark .inst-qr-frame { border-color: var(--line); }
