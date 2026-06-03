@@ -43,12 +43,14 @@ export const evoApi = {
     evo<unknown>(`/webhook/set/${instanceName}`, {
       method: 'POST',
       body: JSON.stringify({
-        url: webhookUrl,
-        enabled: true,
-        webhookByEvents: false,
-        webhookBase64: false,
-        events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-        headers: { 'x-evolution-secret': secret },
+        webhook: {
+          url: webhookUrl,
+          enabled: true,
+          webhookByEvents: false,
+          webhookBase64: false,
+          events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          headers: { 'x-evolution-secret': secret },
+        },
       }),
     }),
 

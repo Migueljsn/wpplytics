@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/app/components/theme-toggle';
 import { ConnectButton } from './connect-button';
+import { SyncButton } from './sync-button';
 import { createInstance, updateInstance, deleteInstance, disconnectInstance, reapplyWebhook } from './actions';
 
 type SearchParams = Promise<{
@@ -137,12 +138,15 @@ export default async function InstancesPage({ searchParams }: { searchParams: Se
 
         {/* ── Instances table ── */}
         <section className="admin-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Wifi size={16} style={{ opacity: 0.6 }} />
-            <h2 className="admin-card-title" style={{ margin: 0 }}>
-              Instâncias
-              <span className="cv-badge" style={{ marginLeft: 4 }}>{instances.length}</span>
-            </h2>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Wifi size={16} style={{ opacity: 0.6 }} />
+              <h2 className="admin-card-title" style={{ margin: 0 }}>
+                Instâncias
+                <span className="cv-badge" style={{ marginLeft: 4 }}>{instances.length}</span>
+              </h2>
+            </div>
+            <SyncButton />
           </div>
 
           {instances.length === 0 ? (

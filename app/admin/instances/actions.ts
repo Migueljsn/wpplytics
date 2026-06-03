@@ -102,6 +102,44 @@ export async function disconnectInstance(formData: FormData) {
   r('/admin/instances?ok=desconectada');
 }
 
+// ── Sync statuses from Evolution API ─────────────────────────────────────────
+
+export async function syncAllStatuses(): Promise<{ updated: number; errors: string[] }> {
+  const instances = await prisma.waInstance.findMany({
+    select: { id: true, evolutionName: true, status: true },
+  });
+
+  const stateMap: Record<string, string> = { open: 'CONNECTED', close: 'DISCONNECTED', connecting: 'PENDING' };
+  let updated = 0;
+  const errors: string[] = [];
+
+  await Promise.allSettled(
+    instances.map(async (inst) => {
+      try {
+        const data = await evoApi.connectionState(inst.evolutionName);
+        const rawState = data?.instance?.state ?? 'close';
+        const newStatus = (stateMap[rawState] ?? 'DISCONNECTED') as 'CONNECTED' | 'DISCONNECTED' | 'PENDING';
+
+        if (newStatus !== inst.status) {
+          await prisma.waInstance.update({
+            where: { id: inst.id },
+            data: {
+              status: newStatus,
+              ...(newStatus === 'CONNECTED' && inst.status !== 'CONNECTED' ? { connectedAt: new Date() } : {}),
+            },
+          });
+          updated++;
+        }
+      } catch {
+        errors.push(inst.evolutionName);
+      }
+    }),
+  );
+
+  revalidatePath('/admin/instances');
+  return { updated, errors };
+}
+
 // ── Reapply webhook ───────────────────────────────────────────────────────────
 
 export async function reapplyWebhook(formData: FormData) {
