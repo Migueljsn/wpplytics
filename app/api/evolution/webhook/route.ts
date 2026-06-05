@@ -98,8 +98,10 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
           ? (rawFileLength as Record<string, unknown>).low as number
           : null;
 
-      // Store only the fields Evolution API needs for media retrieval — not the full webhook payload
-      const slimPayload = { key: msgKey ?? null, message: msgData ?? null, messageType: msgType, messageTimestamp: ts ?? null } as object;
+      // rawPayload only needed for media retrieval — skip for non-media to save storage
+      const slimPayload = mediaKey
+        ? { key: msgKey ?? null, message: msgData ?? null, messageType: msgType, messageTimestamp: ts ?? null } as object
+        : undefined;
 
       try {
         await prisma.message.create({
