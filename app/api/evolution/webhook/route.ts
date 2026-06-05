@@ -78,12 +78,25 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
         stickerMessage: 'stickerMessage',
       };
       const mediaKey = mediaTypeMap[msgType];
-      const mediaData = mediaKey ? (msgData?.[mediaKey] as Record<string, unknown> | undefined) : undefined;
+
+      // documentWithCaptionMessage nests the doc inside .message.documentMessage
+      let mediaData = mediaKey ? (msgData?.[mediaKey] as Record<string, unknown> | undefined) : undefined;
+      if (msgType === 'documentWithCaptionMessage' && mediaData) {
+        const inner = mediaData?.message as Record<string, unknown> | undefined;
+        mediaData = (inner?.documentMessage as Record<string, unknown> | undefined) ?? mediaData;
+      }
+
       const mediaCaption = (mediaData?.caption as string | undefined) ?? null;
       const mediaFileName = (mediaData?.fileName as string | undefined) ?? (mediaData?.title as string | undefined) ?? null;
       const mediaMimetype = (mediaData?.mimetype as string | undefined) ?? null;
       const mediaDuration = (mediaData?.seconds as number | undefined) ?? null;
-      const mediaSize = (mediaData?.fileLength as number | undefined) ?? null;
+      // fileLength is a protobuf Long — normalize to JS number
+      const rawFileLength = mediaData?.fileLength;
+      const mediaSize: number | null =
+        typeof rawFileLength === 'number' ? rawFileLength :
+        rawFileLength && typeof rawFileLength === 'object' && typeof (rawFileLength as Record<string, unknown>).low === 'number'
+          ? (rawFileLength as Record<string, unknown>).low as number
+          : null;
 
       // Store only the fields Evolution API needs for media retrieval — not the full webhook payload
       const slimPayload = { key: msgKey ?? null, message: msgData ?? null, messageType: msgType, messageTimestamp: ts ?? null } as object;
@@ -107,7 +120,9 @@ async function handleMessagesUpsert(waInstance: WaInstance, data: unknown) {
             rawPayload: slimPayload,
           },
         });
-      } catch {
+      } catch (createErr) {
+        const isUniqueViolation = createErr instanceof Error && createErr.message.includes('Unique constraint');
+        if (!isUniqueViolation) console.error('[webhook] failed to save message', msgId, createErr);
         continue;
       }
 
